@@ -32,9 +32,9 @@ let downloadAndSave baseUrl outDir file =
     |> save outDir file
 
 let downloadedImages = new HashSet<string>()
-let getImages baseUrl outDir text =
-    // 'img' group mataches strings like "cover.jpg"
-    let image = """<img src="(?<img>[^\"]+)"""
+let pullImages baseUrl outDir text =
+    // 'img' group mataches text like "cover.jpg"
+    let image = """<img src="(?<img>[^"]+)"""
     Regex.Matches(text, image)
     |> Seq.cast
     |> Seq.map (fun (m : Match )-> m.Groups.["img"].Value)
@@ -42,21 +42,21 @@ let getImages baseUrl outDir text =
     |> Seq.iter (downloadAndSave baseUrl outDir >> ignore)
     text
 
-let rec doPage baseUrl outDir file =
+let rec pullPage baseUrl outDir file =
     file
     |> downloadAndSave baseUrl outDir 
     |> toText
     |> print
-    |> getImages baseUrl outDir
-    |> doNext baseUrl outDir
+    |> pullImages baseUrl outDir
+    |> pullNext baseUrl outDir
 
-and doNext baseUrl outDir text =
-    // 'next' group mataches strings like "book-Z-H-1.html"
-    let next = """href="(?<next>[^\"]+)">next"""
+and pullNext baseUrl outDir text =
+    // 'next' group mataches text like "book-Z-H-1.html"
+    let next = """href="(?<next>[^"]+)">next"""
     let m = Regex.Match(text, next)
     match m.Success with
     | false -> "No Next!"
-    | true -> doPage baseUrl outDir (m.Groups.["next"].Value)    
+    | true -> pullPage baseUrl outDir (m.Groups.["next"].Value)    
 
 
 [<EntryPoint>]
@@ -66,7 +66,7 @@ let main argv =
     Directory.CreateDirectory(outDir) |> ignore
 
     let baseUrl, filename = splitUrl page1
-    doPage baseUrl outDir filename |> printfn "%s"
+    pullPage baseUrl outDir filename |> printfn "%s"
     downloadAndSave baseUrl outDir "book-Z-C.css" |> ignore
     Console.ReadKey() |> ignore
     0
