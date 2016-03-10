@@ -1,4 +1,6 @@
-﻿open System
+﻿#r "System.Net.Http.dll"
+
+open System
 open System.IO
 open System.Net.Http
 open System.Text
@@ -6,13 +8,7 @@ open System.Text.RegularExpressions
 open System.Threading.Tasks
 open System.Collections.Generic
 
-// url -> baseUrl, filename
-// e.g.: "https://mitpress.mit.edu/sicp/full-text/book/book.html"
-//         -> "https://mitpress.mit.edu/sicp/full-text/book/", "book.html" 
-let splitUrl url =
-    match Regex.Split(url, @"(?<=/)(?=[^/]+$)") with
-    | [| baseUrl; filename |] -> baseUrl, filename
-    | _ -> failwith ("failed to split url: " + url)
+# load ".\Common.fsx"
 
 let toText = Encoding.ASCII.GetString
 
@@ -20,6 +16,13 @@ let print text =
     printfn "%s" text
     text
     
+let splitUrl url =
+    // "https://mitpress.mit.edu/sicp/full-text/book/book.html"
+    //   -> "https://mitpress.mit.edu/sicp/full-text/book/", "book.html" 
+    match Regex.Split(url, @"(?<=/)(?=[^/]+$)") with
+    | [| baseUrl; filename |] -> baseUrl, filename
+    | _ -> failwith ("failed to split url: " + url)
+
 let client = new HttpClient()
 let downloadAndSave baseUrl outDir file =
     let download url =
@@ -56,13 +59,12 @@ and pullNext baseUrl outDir text =
     let m = Regex.Match(text, next)
     match m.Success with
     | false -> "No Next!"
-    | true -> pullPage baseUrl outDir (m.Groups.["next"].Value)    
+    | true -> pullPage baseUrl outDir (m.Groups.["next"].Value)  
 
-
-[<EntryPoint>]
+//[<EntryPoint>]
 let main argv = 
     let page1 = @"https://mitpress.mit.edu/sicp/full-text/book/book.html"
-    let outDir = __SOURCE_DIRECTORY__ + @"\..\book-html"
+    let outDir = Common.htmlDir
     Directory.CreateDirectory(outDir) |> ignore
 
     let baseUrl, filename = splitUrl page1
@@ -70,3 +72,5 @@ let main argv =
     downloadAndSave baseUrl outDir "book-Z-C.css" |> ignore
     Console.ReadKey() |> ignore
     0
+
+main [||]
