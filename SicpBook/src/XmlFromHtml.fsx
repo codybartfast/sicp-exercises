@@ -1,4 +1,5 @@
 ﻿#load ".\Common.fsx"
+#load ".\Regex.fsx"
 
 open System.IO
 open System.Text.RegularExpressions
@@ -27,8 +28,8 @@ let xmlEscape text =
         | "\"" -> "&quot;"
         | unexpected -> failwith "got unexpected: " + unexpected))
 
-type File = { Id: Id; Content: Content }
-and Content = 
+type File = { Id: Id; Content: FileContent }
+and FileContent = 
     | Bookend of Html
     | Chapter of Chapter
     | Section of Section
@@ -44,14 +45,20 @@ and Html = Html of string
 and Id = Id of string
 and Title = Title of string
 
-let parseText text = text |> Html |> Bookend
-
-let parseFile (file : FileInfo) = {
-    File.Id = Id file.Name;
-    Content =  (parseText (File.ReadAllText(file.FullName)));
+let parseFile (file : FileInfo) = 
+    let text = File.ReadAllText(file.FullName);
+    {    
+        File.Id = Id file.Name;
+        Content =      
+            match text with
+            | ChapterRx t -> Chapter {Chapter.Id = Id "id"; Title = Title "title"; Epigraph = Epigraph (Html "epigraph"); Prose = {Html = Html "prose"}; Html = Html text}
+            | _ -> Bookend (Html text)
     }
 
-let files = 
+let files () = 
     htmlFiles
     |> Array.map parseFile
-    |> Array.head
+    |> Array.iter (fun f ->
+        printfn "%A" (f.Content.GetType().Name))
+
+
