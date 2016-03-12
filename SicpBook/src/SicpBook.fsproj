@@ -45,7 +45,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <None Include="PullBook.fsx" />
-    <None Include="XmlFromHtml.fsx" />
+    <None Include="Tree.fsx" />
     <None Include="Common.fsx" />
     <None Include="Regex.fsx" />
   </ItemGroup>
