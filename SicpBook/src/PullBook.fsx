@@ -37,10 +37,10 @@ let downloadAndSave baseUrl outDir file =
 let downloadedImages = new HashSet<string>()
 let pullImages baseUrl outDir text =
     // 'img' group mataches text like "cover.jpg"
-    let image = """<img src="(?<img>[^"]+)"""
+    let image = """<img src="(?<imgage>[^"]+)"""
     Regex.Matches(text, image)
     |> Seq.cast
-    |> Seq.map (fun (m : Match )-> m.Groups.["img"].Value)
+    |> Seq.map (fun (m : Match )-> m.Groups.["imgage"].Value)
     |> Seq.filter downloadedImages.Add
     |> Seq.iter (downloadAndSave baseUrl outDir >> ignore)
     text

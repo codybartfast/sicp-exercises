@@ -9,10 +9,17 @@ let sectionRx = new Regex("""<a name="%_sec_\d\.\d+"></a>""", RegexOptions.Compi
 let (|SectionRx|_|) text =
     if sectionRx.IsMatch(text) then Some text else None
 
-//let epigraphRx = new Regex("""(?<=\<span class=epigraph>).*?(?=</span>)""", RegexOptions.Compiled ||| RegexOptions.Singleline)
-let epigraphRx = new Regex("""<div align=right>.*?</div>""", RegexOptions.Compiled ||| RegexOptions.Singleline)
-let (|EpigraphRx|_|) text =
-    let m = epigraphRx.Match(text)
-    if m.Success then Some m.Value else None
-    
-    
+type Place = { String : string; Index : int }
+
+let titleRx = 
+    new Regex(
+        """<h1.*?
+            >\s*Chapter\s (?<id>\d)? \s*</a></div>
+            .*? 
+            >\s* (?<title>\w+(,?\s+\w+)*) \s*</a></h1>
+            <p>"""
+            , RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
+
+let epigraphRx = new Regex("""<p>\s+<div align=right>.*?</div>\s+<p><p>""", RegexOptions.Compiled ||| RegexOptions.Singleline)
+
+let proseRx = new Regex(""".*(?=<p><div class=navigation>\[Go to)""", RegexOptions.Compiled ||| RegexOptions.Singleline)
