@@ -1,4 +1,5 @@
-﻿
+﻿module Regex
+
 open System.Text.RegularExpressions
 
 let chapterRx = new Regex("""<a name="%_chap_\d">""", RegexOptions.Compiled)    

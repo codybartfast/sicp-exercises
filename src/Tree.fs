@@ -1,13 +1,14 @@
-﻿#load ".\Common.fsx"
-#load ".\Regex.fsx"
-
+﻿open System
 open System.IO
 open System.Text.RegularExpressions
 
+open Common
+open Model
 open Regex
+open Outline
 
-let htmlDir = Common.htmlDir
-printfn "Got Html Directory: %s" htmlDir
+let htmlRoot = Common.htmlRoot
+printfn "Got Html Directory: %s" htmlRoot
 
 let fileSortKey file =
     match Regex.Match(file, @"\d+").Value with
@@ -16,7 +17,7 @@ let fileSortKey file =
     |> int
 
 let htmlFiles = 
-    (new DirectoryInfo(htmlDir)).GetFiles("*.html")
+    (new DirectoryInfo(htmlRoot)).GetFiles("*.html")
     |> Array.sortBy (fun file -> fileSortKey file.FullName)
 
 let xmlEscapeRx = new Regex("""[&<>'"]""", RegexOptions.Compiled)
@@ -30,23 +31,6 @@ let xmlEscape text =
         | "\"" -> "&quot;"
         | unexpected -> failwith "got unexpected: " + unexpected))
 
-type File = { Id: Id; Document: Document }
-and Document = 
-    | Chapter of Chapter
-    | Section of Section
-    | Bookend of Bookend
-
-and Chapter = { Id: Id; Title: Title; Epigraph: Epigraph; Prose: Prose; Html: Html}
-and Section = { Id: Id; Title: Title; Prose: Prose; Subsections: Subsection list; Html: Html }
-and Bookend = { Title: Title option; Epigraph : Epigraph option; Prose: Prose; Html: Html}
-and Subsection = { Id: Id; Title: Title; Text: Text list; Html: Html }
-and Epigraph = Epigraph of string
-and Text = Prose | Exercise
-and Prose = Prose of Html
-and Exercise = { Id: Id; Html: Html }
-and Html = Html of string
-and Id = Id of string
-and Title = Title of string
 
 let title place =    
     let m = titleRx.Match(place.String, place.Index)
@@ -102,7 +86,7 @@ let parseFile (file : FileInfo) =
     let text = File.ReadAllText(file.FullName)
     let place = {String = text; Index = 0;}
     {    
-        File.Id = Id file.Name;
+        SicpFile.Id = Id file.Name;
         Document =      
             match text with
             | ChapterRx t -> chapter place
@@ -112,25 +96,32 @@ let parseFile (file : FileInfo) =
 
 let files =  htmlFiles |> Array.map parseFile
 
+[<EntryPoint>]
+let main argv =
+    printfn "Hello, World!"
+    Console.ReadKey() |> ignore
+    0
 
-let go () =
-    files 
-        |> Array.iter (fun f ->        
-            printfn "%A" (f.Document.GetType().Name))
-    printfn "%i" files.Length
+//let go () =
+//    files 
+//        |> Array.iter (fun f ->        
+//            printfn "%A" (f.Document.GetType().Name))
+//    printfn "%i" files.Length
+//
+//let six = 
+//    match files.[9].Document with
+//    | Chapter c -> c
+//    | _ -> failwith "hello there"
+//
+//let ts = 
+//    six.Title
+////    |> function 
+////        | Some t -> ( t |> (function Title s -> s)) 
+////        | None  -> "no title"
+//
+//let ps = 
+//    six.Prose
+//    |> function Prose h -> h
+//    |> function Html s -> s
 
-let six = 
-    match files.[9].Document with
-    | Chapter c -> c
-    | _ -> failwith "hello there"
-
-let ts = 
-    six.Title
-//    |> function 
-//        | Some t -> ( t |> (function Title s -> s)) 
-//        | None  -> "no title"
-
-let ps = 
-    six.Prose
-    |> function Prose h -> h
-    |> function Html s -> s
+//let out ()  = files |> Array.map outline
