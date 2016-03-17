@@ -1,4 +1,6 @@
-﻿open System
+﻿module Tree
+
+open System
 open System.IO
 open System.Text.RegularExpressions
 
@@ -96,11 +98,11 @@ let parseFile (file : FileInfo) =
 
 let files =  htmlFiles |> Array.map parseFile
 
-[<EntryPoint>]
-let main argv =
-    printfn "Hello, World!"
-    Console.ReadKey() |> ignore
-    0
+//[<EntryPoint>]
+//let main argv =
+//    printfn "Hello, World!"
+//    Console.ReadKey() |> ignore
+//    0
 
 //let go () =
 //    files 

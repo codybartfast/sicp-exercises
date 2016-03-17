@@ -1,4 +1,4 @@
-﻿namespace SicpBook.AssemblyInfo
+﻿namespace Book.AssemblyInfo
 
 open System.Reflection
 open System.Runtime.CompilerServices
@@ -7,11 +7,11 @@ open System.Runtime.InteropServices
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[<assembly: AssemblyTitle("SicpBook")>]
+[<assembly: AssemblyTitle("Book")>]
 [<assembly: AssemblyDescription("")>]
 [<assembly: AssemblyConfiguration("")>]
 [<assembly: AssemblyCompany("")>]
-[<assembly: AssemblyProduct("SicpBook")>]
+[<assembly: AssemblyProduct("Book")>]
 [<assembly: AssemblyCopyright("Copyright ©  2016")>]
 [<assembly: AssemblyTrademark("")>]
 [<assembly: AssemblyCulture("")>]
@@ -22,7 +22,7 @@ open System.Runtime.InteropServices
 [<assembly: ComVisible(false)>]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[<assembly: Guid("2a3e43b7-9237-43ad-b92b-5538fb675fc5")>]
+[<assembly: Guid("104c78f8-2905-4d90-94fc-c0be8fdbf922")>]
 
 // Version information for an assembly consists of the following four values:
 // 

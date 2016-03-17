@@ -8,7 +8,7 @@ open System.Text.RegularExpressions
 open System.Threading.Tasks
 open System.Collections.Generic
 
-# load ".\Common.fsx"
+# load ".\Common.fs"
 open Common
     
 let toText = Encoding.ASCII.GetString
@@ -34,23 +34,24 @@ let downloadAndSave baseUrl saveDir file =
     |> save saveDir file
     
 let splitUrl url =
-    // e.g.: "https://mitpress.mit.edu/sicp/full-text/book/book.html"
-    //          -> "https://mitpress.mit.edu/sicp/full-text/book/"
-    //              & "book.html" 
+     (* e.g.: 
+              https://mitpress.mit.edu/sicp/full-text/book/book.html
+                                  is split into
+              https://mitpress.mit.edu/sicp/full-text/book/ & book.html *)
     match Regex.Split(url, @"(?<=/)(?=[^/]+$)") with
     | [| baseUrl; filename |] -> baseUrl, filename
     | _ -> failwith ("failed to split url: " + url)
 
 
 let updateReference html =
-    // Matches the filename in an image or stylesheet reference.
-    //                      follows              match       
-    //                    <--------->  <---------------------> 
+     (* Matches the filename in an image or stylesheet reference.
+                            follows              match       
+                          <--------->  <--------------------->  *)
     let pattern = """(?<=(href|src)=") [-\w]+\.(gif|jpg|(css)) """
                                                           
     let replace (m : Match) = 
         let dirname =               
-            if m.Groups.[3].Success // the parenthesis around (css)
+            if m.Groups.[3].Success (* the parenthesis around (css) *)
             then "stylesheets"
             else "images" 
         dirname + "/" + m.Value
@@ -59,7 +60,7 @@ let updateReference html =
 
 let downloadedImages = new HashSet<string>()
 let pullImages baseUrl text =
-    // 'imgage' group mataches text like "cover.jpg"
+    (* 'imgage' group mataches text like "cover.jpg" *)
     let image = """<img src="(?<imgage>[^"]+)"""
     Regex.Matches(text, image)
     |> Seq.cast
@@ -79,7 +80,7 @@ let rec pullPage baseUrl file =
     |> pullNext baseUrl
 
 and pullNext baseUrl text =
-    // 'next' group mataches text like "book-Z-H-1.html"
+    (* 'next' group mataches text like "book-Z-H-1.html" *)
     let next = """href="(?<next>[^"]+)">next"""
     let m = Regex.Match(text, next)
     match m.Success with
