@@ -1,4 +1,4 @@
-﻿module Tree
+﻿module Files
 
 open System
 open System.IO
@@ -39,6 +39,7 @@ let title place =
     match m.Success with
     | false -> None, None, place
     | true -> 
+    printfn "========= Title %s" m.Value
     let title = Some (Title m.Groups.["title"].Value)
 
     let mId = m.Groups.["id"]
@@ -72,7 +73,6 @@ let bookend place =
 
 let chapter place =
     let id, title, place = title place
-    printfn "====================== %A:%A" id title
     let epigraph, place = epigraph place
     let prose, _ = prose place
     Chapter{
@@ -80,6 +80,19 @@ let chapter place =
         Title = title.Value;
         Epigraph = epigraph.Value;
         Prose = prose;
+        Html = Html place.String;
+    }
+
+let section place =
+    let id, title, place = title place
+    let x = match id with Some id -> id | None -> failwith "No !"
+    let prose, place = prose place
+    let subsections = []
+    Section{
+        Id = id.Value;
+        Title = title.Value;
+        Prose = prose;
+        Subsections = subsections;
         Html = Html place.String;
     }
 
@@ -92,38 +105,9 @@ let parseFile (file : FileInfo) =
         Document =      
             match text with
             | ChapterRx t -> chapter place
-            | SectionRx t -> Section {Id = Id "id"; Title = Title "title"; Prose = Prose (Html "prose"); Subsections = []; Html = Html text}
+            //| SectionRx t -> Section {Id = Id "id"; Title = Title "title"; Prose = Prose (Html "prose"); Subsections = []; Html = Html text}
+            | SectionRx t -> section place
             | _ -> bookend place
     }
 
 let files =  htmlFiles |> Array.map parseFile
-
-//[<EntryPoint>]
-//let main argv =
-//    printfn "Hello, World!"
-//    Console.ReadKey() |> ignore
-//    0
-
-//let go () =
-//    files 
-//        |> Array.iter (fun f ->        
-//            printfn "%A" (f.Document.GetType().Name))
-//    printfn "%i" files.Length
-//
-//let six = 
-//    match files.[9].Document with
-//    | Chapter c -> c
-//    | _ -> failwith "hello there"
-//
-//let ts = 
-//    six.Title
-////    |> function 
-////        | Some t -> ( t |> (function Title s -> s)) 
-////        | None  -> "no title"
-//
-//let ps = 
-//    six.Prose
-//    |> function Prose h -> h
-//    |> function Html s -> s
-
-//let out ()  = files |> Array.map outline

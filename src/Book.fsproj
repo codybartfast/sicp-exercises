@@ -50,11 +50,11 @@
     <Compile Include="AssemblyInfo.fs" />
     <None Include="App.config" />
     <Compile Include="Common.fs" />
+    <None Include="PullBook.fsx" />
     <Compile Include="Regex.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Outline.fs" />
-    <None Include="PullBook.fsx" />
-    <Compile Include="Tree.fs" />
+    <Compile Include="Files.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <PropertyGroup>
