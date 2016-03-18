@@ -10,15 +10,22 @@ let sectionRx = new Regex("""<a name="%_sec_\d\.\d+"></a>""", RegexOptions.Compi
 let (|SectionRx|_|) text =
     if sectionRx.IsMatch(text) then Some text else None
 
-type Place = { String : string; Index : int }
+let subsectionRx = 
+    new Regex("""
+        <h3>.*?
+        (?=
+            <h3>
+          | <div\ class="smallprint"><hr></div>
+        )
+        """, RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
 
-
-// # (\s* Chapter\s (?<id>\d)? \s*</a></div> .*? )?
 let titleRx = 
     new Regex(
-        """<h[12].*?
-            
-            (?<id>\d(\.\d+)?")?>(\d+\.\d+&nbsp;&nbsp;)?(?<title>[-:\w]+(,?\s+[-:\w]+)*) \s*</a></h[12]>
+        """<h[123].*?
+            (?<id>\d(\.\d){0,2})?
+            ">(\d+(\.\d)*&nbsp;&nbsp;)? 
+            (?<title>[-:\w]+(,?\s+[-:\w]+)*) 
+            \s*</a></h[123]>
             <p>"""
             , RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
 

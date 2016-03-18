@@ -10,17 +10,23 @@ let chapter (chapter : Chapter) =
         yield sprintf "    Chapter %s: %s" (strId chapter.Id)  (strTitle chapter.Title)
     }
 
+let subsection (subsection : Subsection) =
+    seq{
+        yield sprintf "          Subsection: %s: %s" (strId subsection.Id)  (strTitle subsection.Title)
+    }
+
 let section (section : Section) =
     seq{
         yield sprintf "        Section: %s: %s" (strId section.Id)  (strTitle section.Title)
-        yield sprintf "%A" section.Prose
+        //yield sprintf "%A" section.Prose
+        yield! section.Subsections |> Seq.collect subsection
     }
 
-let bookend (bookend : Bookend) =
+let matter (matter : Matter) =
     seq{
-        yield sprintf "    Bookend: %A" (
-            match bookend.Title with
-            | Some title -> match title with Title text -> text
+        yield sprintf "    Matter: %s" (
+            match matter.Title with
+            | Some title -> strTitle title
             | None -> "")
     }
 
@@ -30,4 +36,4 @@ let outline (file : SicpFile) =
         match file.Document with
             | Chapter doc -> yield! chapter doc
             | Section doc -> yield! section doc
-            | Bookend doc -> yield! bookend doc }
+            | Matter doc -> yield! matter doc }

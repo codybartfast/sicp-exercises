@@ -10,7 +10,7 @@ open Regex
 open Outline
 
 let htmlRoot = Common.htmlRoot
-printfn "Got Html Directory: %s" htmlRoot
+//printfn "Got Html Directory: %s" htmlRoot
 
 let fileSortKey file =
     match Regex.Match(file, @"\d+").Value with
@@ -39,7 +39,7 @@ let title place =
     match m.Success with
     | false -> None, None, place
     | true -> 
-    printfn "========= Title %s" m.Value
+    //printfn "========= Title %s" m.Value
     let title = Some (Title m.Groups.["title"].Value)
 
     let mId = m.Groups.["id"]
@@ -61,11 +61,11 @@ let prose place =
     let m = proseRx.Match(place.String, place.Index)
     (Prose (Html m.Value), {place with Index = m.Index})
 
-let bookend place = 
+let matter place = 
     let _, title, place = title place
     let epigraph, place = epigraph place
     let prose, _ = prose place
-    Bookend {
+    Matter {
         Title = title;
         Epigraph = epigraph; 
         Prose = prose;
@@ -83,11 +83,39 @@ let chapter place =
         Html = Html place.String;
     }
 
+let subsection place =
+    let id, title, place = title place
+    {
+        Subsection.Id = id.Value;
+        Title = title.Value;
+        Blocks = []
+        Html = Html place.String
+    }, place
+
+let matchPlaces regex place =
+    let matches = 
+        subsectionRx.Matches(place.String, place.Index)
+        |> Seq.cast<Match>
+        |> List.ofSeq
+    let places =
+        matches 
+        |> List.map (fun m -> {place with Index = m.Index})
+    let lastMatch = matches |> List.last
+    let endPlace = {place with Index = lastMatch.Index + lastMatch.Length}
+    places, endPlace
+
+let subsections place =   
+    let ssPlaces, endPlace = matchPlaces subsectionRx place
+    let subsections = 
+        ssPlaces 
+        |> List.map (subsection >> fst)
+    subsections, endPlace
+    
 let section place =
     let id, title, place = title place
     let x = match id with Some id -> id | None -> failwith "No !"
     let prose, place = prose place
-    let subsections = []
+    let subsections, place = subsections place
     Section{
         Id = id.Value;
         Title = title.Value;
@@ -105,9 +133,8 @@ let parseFile (file : FileInfo) =
         Document =      
             match text with
             | ChapterRx t -> chapter place
-            //| SectionRx t -> Section {Id = Id "id"; Title = Title "title"; Prose = Prose (Html "prose"); Subsections = []; Html = Html text}
             | SectionRx t -> section place
-            | _ -> bookend place
+            | _ -> matter place
     }
 
 let files =  htmlFiles |> Array.map parseFile
