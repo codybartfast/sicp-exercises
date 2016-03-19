@@ -33,14 +33,15 @@ let xmlEscape text =
         | "\"" -> "&quot;"
         | unexpected -> failwith "got unexpected: " + unexpected))
 
-let matchParts (regex : Regex) place =
+let matchParts (regex : Regex) (part : Part) =
     let matches = 
-        regex.Matches(place.String, place.Index)
+        regex.Matches(part.String, part.Start)
         |> Seq.cast<Match>
+        |> Seq.takeWhile (fun m -> m.Index < part.End)
         |> List.ofSeq
     let parts =
         matches 
-        |> List.map (fun m -> {Start = m.Index; End = m.Index + m.Length; String = place.String})
+        |> List.map (fun m -> {Start = m.Index; End = m.Index + m.Length; String = part.String})
 //    let lastMatch = matches |> List.last
 //    let endPlace = {place with Index = lastMatch.Index + lastMatch.Length}
     parts//, endPlace
@@ -107,7 +108,7 @@ let blocks place =
     
 let subsection (part : Part) =
     let id, title, place = title {String = part.String; Index = part.Start; }
-    let blocks = blocks place
+    let blocks = blocks {part with Start = place.Index}
     {
         Subsection.Id = id.Value;
         Title = title.Value;
@@ -125,7 +126,7 @@ let subsections place =
 let section place =
     let id, title, place = title place
     let prose, place = prose place
-    let subsections = subsections place
+    let subsections = subsections {Part.String = place.String; Start = place.Index; End = place.String.Length}
     Section{
         Id = id.Value;
         Title = title.Value;
