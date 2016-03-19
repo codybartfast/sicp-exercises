@@ -33,9 +33,9 @@ let xmlEscape text =
         | "\"" -> "&quot;"
         | unexpected -> failwith "got unexpected: " + unexpected))
 
-let matchPlaces regex place =
+let matchPlaces (regex : Regex) place =
     let matches = 
-        subsectionRx.Matches(place.String, place.Index)
+        regex.Matches(place.String, place.Index)
         |> Seq.cast<Match>
         |> List.ofSeq
     let places =
@@ -95,7 +95,8 @@ let chapter place =
     }
 
 let block place = 
-    Block.Prose (Prose (Html "bloc")), place
+    let str = place.String
+    Block.Prose (Prose (Html str)), place
 
 let blocks place =
     let blockPlaces, endPlace = matchPlaces blockRx place
@@ -106,11 +107,11 @@ let blocks place =
     
 let subsection place =
     let id, title, place = title place
-    //let blocks, _ = blocks place
+    let blocks, _ = blocks place
     {
         Subsection.Id = id.Value;
         Title = title.Value;
-        Blocks = [];
+        Blocks = blocks;
         Html = Html place.String
     }, place
 
@@ -123,7 +124,6 @@ let subsections place =
     
 let section place =
     let id, title, place = title place
-    //let x = match id with Some id -> id | None -> failwith "No !"
     let prose, place = prose place
     let subsections, place = subsections place
     Section{
@@ -133,7 +133,6 @@ let section place =
         Subsections = subsections;
         Html = Html place.String;
     }
-
 
 let parseFile (file : FileInfo) = 
     let text = File.ReadAllText(file.FullName)

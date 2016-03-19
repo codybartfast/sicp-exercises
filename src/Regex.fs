@@ -37,15 +37,28 @@ let subsectionRx =
 
 let blockRx = 
     new Regex("""
-        (?<conent>
-            (?<exercise>
-                <a\ name="%_thm_ (?<id>\d\.\d+)
-                .*?
-                Exercise \d\.\d+
-                .*?
-                </a>
-            )?
-            .*?
-        )+
-        (?= <div\ class="?smallprint"?><hr></div>)
+        \G
+        (?<coment>
+            # (?<exercise>
+            #    <a\ name="%_thm_ (?<id>\d\.\d+)
+            #    .+?
+            #    Exercise \d\.\d+
+            #    .+?
+            #    </a>
+            #)?
+
+            .+?
+
+            #(?=
+            #    evaluator
+            #    | $
+            #)
+        ) 
+        (?= 
+            <h3> 
+            | <a\ name="%_thm_
+            | <div\ class=smallprint><hr></div>
+        )
     """, RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
+
+//            # (?= <div\ class=smallprint><hr></div>)

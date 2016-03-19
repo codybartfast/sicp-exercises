@@ -10,9 +10,17 @@ let chapter (chapter : Chapter) =
         yield sprintf "    Chapter: %s - %s" (strId chapter.Id)  (strTitle chapter.Title)
     }
 
+let block (block : Block) =
+    let strBlock (Block.Prose (Prose (Html s))) = s
+    let str = strBlock block  
+    seq{
+        yield sprintf "            Block %i" str.Length
+    }
+
 let subsection (subsection : Subsection) =
     seq{
         yield sprintf "          Subsection: %s - %s" (strId subsection.Id)  (strTitle subsection.Title)
+        yield! subsection.Blocks |> Seq.collect block
     }
 
 let section (section : Section) =
