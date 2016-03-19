@@ -38,22 +38,17 @@ let subsectionRx =
 let blockRx = 
     new Regex("""
         \G
-        (?<coment>
-            # (?<exercise>
-            #    <a\ name="%_thm_ (?<id>\d\.\d+)
-            #    .+?
-            #    Exercise \d\.\d+
-            #    .+?
-            #    </a>
-            #)?
-
-            .+?
-
-            #(?=
-            #    evaluator
-            #    | $
-            #)
-        ) 
+        (
+            (?<exercise>
+               <a\ name="%_thm_ (?<id>\d\.\d+)
+               .+?
+               Exercise \d\.\d+
+               .+?
+                </a>
+            )
+        |
+            (?<prose> .+? )
+        )
         (?= 
             <h3> 
             | <a\ name="%_thm_
