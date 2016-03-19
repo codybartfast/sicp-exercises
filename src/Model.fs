@@ -1,5 +1,6 @@
 ﻿module Model
 
+type Part = { String : string; Start : int; End : int}
 type Place = { String : string; Index : int }
 
 type SicpFile = { Id: Id; Document: Document }

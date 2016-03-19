@@ -33,17 +33,17 @@ let xmlEscape text =
         | "\"" -> "&quot;"
         | unexpected -> failwith "got unexpected: " + unexpected))
 
-let matchPlaces (regex : Regex) place =
+let matchParts (regex : Regex) place =
     let matches = 
         regex.Matches(place.String, place.Index)
         |> Seq.cast<Match>
         |> List.ofSeq
-    let places =
+    let parts =
         matches 
-        |> List.map (fun m -> {place with Index = m.Index})
-    let lastMatch = matches |> List.last
-    let endPlace = {place with Index = lastMatch.Index + lastMatch.Length}
-    places, endPlace
+        |> List.map (fun m -> {Start = m.Index; End = m.Index + m.Length; String = place.String})
+//    let lastMatch = matches |> List.last
+//    let endPlace = {place with Index = lastMatch.Index + lastMatch.Length}
+    parts//, endPlace
 
 let title place =    
     let m = titleRx.Match(place.String, place.Index)
@@ -94,20 +94,20 @@ let chapter place =
         Html = Html place.String;
     }
 
-let block place = 
-    let str = place.String
-    Block.Prose (Prose (Html str)), place
+let block (part : Part) = 
+    let str = part.String
+    Block.Prose (Prose (Html str))
 
 let blocks place =
-    let blockPlaces, endPlace = matchPlaces blockRx place
+    let blockParts = matchParts blockRx place
     let blocks = 
-        blockPlaces
-        |> List.map (block >> fst)
-    blocks, place
+        blockParts
+        |> List.map block
+    blocks
     
-let subsection place =
-    let id, title, place = title place
-    let blocks, _ = blocks place
+let subsection (part : Part) =
+    let id, title, place = title {String = part.String; Index = part.Start; }
+    let blocks = blocks place
     {
         Subsection.Id = id.Value;
         Title = title.Value;
@@ -116,16 +116,16 @@ let subsection place =
     }, place
 
 let subsections place =   
-    let ssPlaces, endPlace = matchPlaces subsectionRx place
+    let ssPlaces = matchParts subsectionRx place
     let subsections = 
         ssPlaces 
         |> List.map (subsection >> fst)
-    subsections, endPlace
+    subsections
     
 let section place =
     let id, title, place = title place
     let prose, place = prose place
-    let subsections, place = subsections place
+    let subsections = subsections place
     Section{
         Id = id.Value;
         Title = title.Value;
