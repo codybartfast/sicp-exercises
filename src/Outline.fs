@@ -4,17 +4,22 @@ open Model
 
 let strId (Id str) = str
 let strTitle (Title str) = str
+let strHtml (Html str) = str
+
+
+let block (block : Block) =
+    seq{       
+        yield 
+            match block with
+            | Block.Prose (Prose (Html str)) ->  
+                sprintf "            Prose (%i)" str.Length
+            | Block.Exercise ex -> 
+                sprintf "            Exercise: %s (%i)" (strId ex.Id) (strHtml ex.Html).Length
+    }
 
 let chapter (chapter : Chapter) =
     seq{ 
         yield sprintf "    Chapter: %s - %s" (strId chapter.Id)  (strTitle chapter.Title)
-    }
-
-let block (block : Block) =
-    let strBlock (Block.Prose (Prose (Html s))) = s
-    let str = strBlock block  
-    seq{
-        yield sprintf "            Block %i" str.Length
     }
 
 let subsection (subsection : Subsection) =
@@ -26,7 +31,9 @@ let subsection (subsection : Subsection) =
 let section (section : Section) =
     seq{
         yield sprintf "        Section: %s - %s" (strId section.Id)  (strTitle section.Title)
-        //yield sprintf "%A" section.Prose
+        match section.Exercise with
+        | Some ex -> yield! block (Block.Exercise ex)
+        | None -> yield! Seq.empty
         yield! section.Subsections |> Seq.collect subsection
     }
 

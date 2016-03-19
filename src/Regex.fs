@@ -15,7 +15,7 @@ let titleRx =
 let epigraphRx = new Regex("""<p>\s+<div align=right>.*?</div>\s+<p><p>""", RegexOptions.Compiled ||| RegexOptions.Singleline)
 
 let proseRx = 
-    new Regex(""".*?(?=<p><div class=navigation>\[Go to|<a name="%_sec_\d\.\d\.\d)"""
+    new Regex(""".*?(?=<p><div class=navigation>\[Go to|<a name="%_sec_\d\.\d\.\d|<div\ class=smallprint><hr></div>)"""
     , RegexOptions.Compiled ||| RegexOptions.Singleline )
 
 let chapterRx = new Regex("""<a name="%_chap_\d">""", RegexOptions.Compiled)    
@@ -44,8 +44,6 @@ let blockRx =
                .+?
                Exercise\ \d\.\d+
                .+?
-               </a>
-               .+?
             )
         |
             (?<prose> .+? )
@@ -57,5 +55,9 @@ let blockRx =
             | $
         )
     """, RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
+
+//let remainderRx =  
+//    new Regex(".*" , 
+//        RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
 
 //            # (?= <div\ class=smallprint><hr></div>)

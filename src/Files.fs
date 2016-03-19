@@ -76,6 +76,19 @@ let matter place =
         Prose = prose;
         Html = Html place.String }
 
+let block (m : Match) = 
+    let str = m.Value
+    match m.Groups.["exercise"].Success with
+    | false -> Block.Prose (Prose (Html str))
+    | true -> Block.Exercise {
+        Exercise.Id = Id m.Groups.["id"].Value
+        Html = Html m.Value
+    }
+
+let blocks (m : Match) =
+    matches blockRx (m.Value) 0 
+    |> List.map block
+
 let chapter place =
     let id, title, place = title place
     let epigraph, place = epigraph place
@@ -87,15 +100,6 @@ let chapter place =
         Prose = prose;
         Html = Html place.String;
     }
-
-let block (m : Match) = 
-    let str = m.Value
-    //printfn "%b - %b" (m.Groups.["prose"].Success) (m.Groups.["exercise"].Success)
-    Block.Prose (Prose (Html str))
-
-let blocks (m : Match) =
-    matches blockRx (m.Value) 0 
-    |> List.map block
     
 let subsection (m : Match) =
     let id, title, place = title {String = m.Value; Index = 0; }
@@ -113,12 +117,23 @@ let subsections place =
     
 let section place =
     let id, title, place = title place
-    let prose, place = prose place
+
+
+    let text = proseRx.Match(place.String, place.Index)
+    let blocks = blocks (text)
+    let prose, ex =
+        match blocks with 
+        | [Block.Prose pr] -> pr, None
+        | [Block.Prose pr; Block.Exercise ex] -> pr, Some ex
+        | _ -> failwith "Make the mean man stop"
+
+
     let subsections = subsections place
     Section{
         Id = id.Value;
         Title = title.Value;
         Prose = prose;
+        Exercise = ex;
         Subsections = subsections;
         Html = Html place.String;
     }
