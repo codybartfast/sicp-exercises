@@ -12,7 +12,9 @@ and Section = { Id: Id; Title: Title; Prose: Prose; Subsections: Subsection list
 and Matter = { Title: Title option; Epigraph : Epigraph option; Prose: Prose; Html: Html}
 and Subsection = { Id: Id; Title: Title; Blocks: Block list; Html: Html }
 and Epigraph = Epigraph of string
-and Block = Prose | Exercise
+and Block = 
+    | Prose of Prose
+    | Exercise of Exercise
 and Prose = Prose of Html
 and Exercise = { Id: Id; Html: Html }
 and Html = Html of string

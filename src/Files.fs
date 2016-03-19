@@ -33,6 +33,17 @@ let xmlEscape text =
         | "\"" -> "&quot;"
         | unexpected -> failwith "got unexpected: " + unexpected))
 
+let matchPlaces regex place =
+    let matches = 
+        subsectionRx.Matches(place.String, place.Index)
+        |> Seq.cast<Match>
+        |> List.ofSeq
+    let places =
+        matches 
+        |> List.map (fun m -> {place with Index = m.Index})
+    let lastMatch = matches |> List.last
+    let endPlace = {place with Index = lastMatch.Index + lastMatch.Length}
+    places, endPlace
 
 let title place =    
     let m = titleRx.Match(place.String, place.Index)
@@ -83,26 +94,25 @@ let chapter place =
         Html = Html place.String;
     }
 
+let block place = 
+    Block.Prose (Prose (Html "bloc")), place
+
+let blocks place =
+    let blockPlaces, endPlace = matchPlaces blockRx place
+    let blocks = 
+        blockPlaces
+        |> List.map (block >> fst)
+    blocks, place
+    
 let subsection place =
     let id, title, place = title place
+    //let blocks, _ = blocks place
     {
         Subsection.Id = id.Value;
         Title = title.Value;
-        Blocks = []
+        Blocks = [];
         Html = Html place.String
     }, place
-
-let matchPlaces regex place =
-    let matches = 
-        subsectionRx.Matches(place.String, place.Index)
-        |> Seq.cast<Match>
-        |> List.ofSeq
-    let places =
-        matches 
-        |> List.map (fun m -> {place with Index = m.Index})
-    let lastMatch = matches |> List.last
-    let endPlace = {place with Index = lastMatch.Index + lastMatch.Length}
-    places, endPlace
 
 let subsections place =   
     let ssPlaces, endPlace = matchPlaces subsectionRx place
@@ -113,7 +123,7 @@ let subsections place =
     
 let section place =
     let id, title, place = title place
-    let x = match id with Some id -> id | None -> failwith "No !"
+    //let x = match id with Some id -> id | None -> failwith "No !"
     let prose, place = prose place
     let subsections, place = subsections place
     Section{
@@ -137,4 +147,5 @@ let parseFile (file : FileInfo) =
             | _ -> matter place
     }
 
-let files =  htmlFiles |> Array.map parseFile
+let files () =  htmlFiles |> Array.map parseFile
+

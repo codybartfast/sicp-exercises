@@ -7,17 +7,17 @@ let strTitle (Title str) = str
 
 let chapter (chapter : Chapter) =
     seq{ 
-        yield sprintf "    Chapter %s: %s" (strId chapter.Id)  (strTitle chapter.Title)
+        yield sprintf "    Chapter: %s - %s" (strId chapter.Id)  (strTitle chapter.Title)
     }
 
 let subsection (subsection : Subsection) =
     seq{
-        yield sprintf "          Subsection: %s: %s" (strId subsection.Id)  (strTitle subsection.Title)
+        yield sprintf "          Subsection: %s - %s" (strId subsection.Id)  (strTitle subsection.Title)
     }
 
 let section (section : Section) =
     seq{
-        yield sprintf "        Section: %s: %s" (strId section.Id)  (strTitle section.Title)
+        yield sprintf "        Section: %s - %s" (strId section.Id)  (strTitle section.Title)
         //yield sprintf "%A" section.Prose
         yield! section.Subsections |> Seq.collect subsection
     }
