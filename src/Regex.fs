@@ -7,7 +7,7 @@ let titleRx =
         """<h[123].*?
             (?<id>\d(\.\d){0,2})?
             ">(\d+(\.\d)*&nbsp;&nbsp;)? 
-            (?<title>[^<]+(<tt>[^<]+</tt>)?[^<]+) 
+            (?<title>[^<]+(<tt>[^<]+</tt>([^<]+)?)?) 
             </a></h[123]>
             <p>"""
             , RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
@@ -42,9 +42,10 @@ let blockRx =
             (?<exercise>
                <a\ name="%_thm_ (?<id>\d\.\d+)
                .+?
-               Exercise \d\.\d+
+               Exercise\ \d\.\d+
                .+?
-                </a>
+               </a>
+               .+?
             )
         |
             (?<prose> .+? )
@@ -53,6 +54,7 @@ let blockRx =
             <h3> 
             | <a\ name="%_thm_
             | <div\ class=smallprint><hr></div>
+            | $
         )
     """, RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
 

@@ -33,25 +33,18 @@ let xmlEscape text =
         | "\"" -> "&quot;"
         | unexpected -> failwith "got unexpected: " + unexpected))
 
-let matchParts (regex : Regex) (part : Part) =
+let matches (regex : Regex) (string : String) (start : int)   =
     let matches = 
-        regex.Matches(part.String, part.Start)
+        regex.Matches(string.Trim(), start)
         |> Seq.cast<Match>
-        |> Seq.takeWhile (fun m -> m.Index < part.End)
         |> List.ofSeq
-    let parts =
-        matches 
-        |> List.map (fun m -> {Start = m.Index; End = m.Index + m.Length; String = part.String})
-//    let lastMatch = matches |> List.last
-//    let endPlace = {place with Index = lastMatch.Index + lastMatch.Length}
-    parts//, endPlace
+    matches
 
 let title place =    
     let m = titleRx.Match(place.String, place.Index)
     match m.Success with
     | false -> None, None, place
     | true -> 
-    //printfn "========= Title %s" m.Value
     let title = Some (Title m.Groups.["title"].Value)
 
     let mId = m.Groups.["id"]
@@ -95,38 +88,33 @@ let chapter place =
         Html = Html place.String;
     }
 
-let block (part : Part) = 
-    let str = part.String
+let block (m : Match) = 
+    let str = m.Value
+    //printfn "%b - %b" (m.Groups.["prose"].Success) (m.Groups.["exercise"].Success)
     Block.Prose (Prose (Html str))
 
-let blocks place =
-    let blockParts = matchParts blockRx place
-    let blocks = 
-        blockParts
-        |> List.map block
-    blocks
+let blocks (m : Match) =
+    matches blockRx (m.Value) 0 
+    |> List.map block
     
-let subsection (part : Part) =
-    let id, title, place = title {String = part.String; Index = part.Start; }
-    let blocks = blocks {part with Start = place.Index}
+let subsection (m : Match) =
+    let id, title, place = title {String = m.Value; Index = 0; }
+    let blocks = blocks m
     {
         Subsection.Id = id.Value;
         Title = title.Value;
         Blocks = blocks;
         Html = Html place.String
-    }, place
+    }
 
 let subsections place =   
-    let ssPlaces = matchParts subsectionRx place
-    let subsections = 
-        ssPlaces 
-        |> List.map (subsection >> fst)
-    subsections
+    matches subsectionRx place.String place.Index
+    |> List.map subsection
     
 let section place =
     let id, title, place = title place
     let prose, place = prose place
-    let subsections = subsections {Part.String = place.String; Start = place.Index; End = place.String.Length}
+    let subsections = subsections place
     Section{
         Id = id.Value;
         Title = title.Value;
