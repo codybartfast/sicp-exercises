@@ -2,11 +2,6 @@
 
 open Model
 
-let strId (Id str) = str
-let strTitle (Title str) = str
-let strHtml (Html str) = str
-
-
 let block (block : Block) =
     seq{       
         yield 

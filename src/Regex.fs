@@ -45,14 +45,21 @@ let blockRx =
                Exercise\ \d\.\d+
                .+?
             )
+            (?= 
+                <h3> 
+                | <a\ name="%_thm_
+                | <a\ name="%_sec_
+                | <div\ class=smallprint><hr></div>
+                | $
+            )
         |
             (?<prose> .+? )
-        )
-        (?= 
-            <h3> 
-            | <a\ name="%_thm_
-            | <div\ class=smallprint><hr></div>
-            | $
+            (?= 
+                <h3> 
+                | <a\ name="%_thm_
+                | <div\ class=smallprint><hr></div>
+                | $
+            )
         )
     """, RegexOptions.Compiled ||| RegexOptions.Singleline ||| RegexOptions.IgnorePatternWhitespace)
 

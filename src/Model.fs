@@ -21,3 +21,7 @@ and Exercise = { Id: Id; Html: Html }
 and Html = Html of string
 and Id = Id of string
 and Title = Title of string
+
+let strId (Id str) = str
+let strTitle (Title str) = str
+let strHtml (Html str) = str

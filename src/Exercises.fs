@@ -28,8 +28,6 @@ let exercisesFromFile file =
 let allExercises files = files |> Seq.collect exercisesFromFile
 
 let write ex =
-    let strId (Id str) = str
-    let strHtml (Html str) = str
     let dir = exerciseRoot
     let path = Path.Combine(dir, strId ex.Id + ".txt")
     File.WriteAllText(path, strHtml ex.Html)
