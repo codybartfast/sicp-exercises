@@ -53,8 +53,9 @@
     <None Include="PullBook.fsx" />
     <Compile Include="Regex.fs" />
     <Compile Include="Model.fs" />
-    <Compile Include="Outline.fs" />
     <Compile Include="Files.fs" />
+    <Compile Include="Exercises.fs" />
+    <Compile Include="Outline.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <PropertyGroup>

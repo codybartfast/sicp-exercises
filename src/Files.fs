@@ -7,7 +7,6 @@ open System.Text.RegularExpressions
 open Common
 open Model
 open Regex
-open Outline
 
 let htmlRoot = Common.htmlRoot
 //printfn "Got Html Directory: %s" htmlRoot
