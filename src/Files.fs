@@ -80,7 +80,7 @@ let block (m : Match) =
     match m.Groups.["exercise"].Success with
     | false -> Block.Prose (Prose (Html str))
     | true -> Block.Exercise {
-        Exercise.Id = Id m.Groups.["id"].Value
+        ExerciseSrc.Id = Id m.Groups.["id"].Value
         Html = Html m.Value
     }
 
@@ -116,7 +116,6 @@ let subsections place =
     
 let section place =
     let id, title, place = title place
-
 
     let text = proseRx.Match(place.String, place.Index)
     let blocks = blocks (text)

@@ -8,7 +8,7 @@ open Model
 let main argv =
     let files = Files.files ()
     
-    let sectOfDoc (Section sect) = sect
+    //let sectOfDoc (Section sect) = sect
 
     files
     |> Seq.collect outline
@@ -16,13 +16,7 @@ let main argv =
 
     files
     |> allExercises
-    |> Seq.iter write
-
-//    let file = files.[10]
-//    let sect = sectOfDoc file.Document
-//    let sub = sect.Subsections.[6]
-//
-//    //printfn "%A" sub
+    |> Seq.iter desc
 
     printfn "%s" "Done."
     Console.ReadKey() |> ignore
