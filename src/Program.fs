@@ -8,15 +8,17 @@ open Model
 let main argv =
     let files = Files.files ()
     
-    //let sectOfDoc (Section sect) = sect
+//    files
+//    |> Seq.collect outline
+//    |> Seq.iter (printfn "%s")
 
-    files
-    |> Seq.collect outline
-    |> Seq.iter (printfn "%s")
-
-    files
-    |> allExercises
-    |> Seq.iter desc
+    let exercises = 
+        files 
+        |> allExercises 
+        |> List.ofSeq
+    
+    let xx = exercises |> List.take 5
+    xx |> Seq.iter desc
 
     printfn "%s" "Done."
     Console.ReadKey() |> ignore
