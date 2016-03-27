@@ -16,9 +16,17 @@ let main argv =
         files 
         |> allExercises 
         |> List.ofSeq
+
+    exercises 
+        |> List.iter write
     
-    let xx = exercises |> List.take 5
-    xx |> Seq.iter desc
+    let xx = exercises //|> List.take 5
+    xx |> Seq.iter (fun x ->
+        Console.Clear ()
+        desc x
+        Console.ReadKey () |> ignore
+        )
+    
 
     printfn "%s" "Done."
     Console.ReadKey() |> ignore

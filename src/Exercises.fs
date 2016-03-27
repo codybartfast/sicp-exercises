@@ -8,6 +8,10 @@ open Common
 open Model
 
 let NL = "\r\n"
+let lineLength = 72
+let lineLenStr = lineLength.ToString()
+
+let bookUrl = "http://sicp-book.com/"
 
 type Exercise = {
     Source: ExerciseSrc
@@ -23,8 +27,16 @@ let rxRemove pattern string = rxReplace pattern (fun s -> "") string
 let getHtml src =
     src
     |> strHtml
-    |> rxRemove """^(<a name="%_idx_\d+">)?<a name="%_thm_\d.\d+"></a>\s+"""
-    |> rxRemove """(<p>\s*)*$"""
+    |> rxRemove """<a name="%_(idx|thm)_\d.\d+"></a>\s*"""
+    |> rxRemove """(<p>\s*)*$""" 
+
+let formatPara (m : Match) =
+    m.Value
+    |> rxReplace "\s*\n" (fun m -> " ")
+    |> rxRemove "(?<![.?]) +(?= )" 
+    |> rxReplace ("(?<line>\G.{0," + lineLenStr + "}) ") (fun m->
+         m.Groups.["line"].Value + NL)
+    //|> (fun txt -> txt + NL)
 
 let getText html =
     html        
@@ -32,13 +44,25 @@ let getText html =
     |> rxReplace "&nbsp;" (fun m -> " ")
     |> rxReplace "&lt;" (fun m -> "<")
     |> rxReplace "&gt;" (fun m -> "<")
-    |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> "\r\n")
-    |> rxReplace """(\r?\n){2,}""" (fun m -> "\r\n\r\n")
+    |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
+    |> rxReplace """(\r?\n){2,}""" (fun m -> NL + NL)
     |> rxReplace """^<b>(?<title>.*?)\.</b>\s*""" (fun m ->
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
-        title + NL + underline + NL
+        title + NL + underline + NL + NL)
+    |> rxReplace """(?<=\n)([A-Z]|[a-z]\. )([^\r\n]+\r?\n)+""" formatPara
+    |> rxReplace "[\r\n]*$" (fun m -> NL)
+
+let withMatter ex =
+    String.Concat(
+        String ('=', lineLength), NL, NL,
+        ex.Text, NL,
+        new String('-', lineLength), NL,
+        "[Exercise ", strId ex.Source.Id, "]: ", bookUrl, ex.UrlPath, NL,
+        String ('-', lineLength)
     )
+    |> fun text -> Regex.Replace(text, "^",  ";   ", RegexOptions.Multiline) 
+        
 
 let exerciseFromSource file (exSrc : ExerciseSrc) = 
     let html = getHtml exSrc.Html
@@ -69,15 +93,10 @@ let exercisesFromFile file =
     }
 let allExercises files = files |> Seq.collect exercisesFromFile
 
-let write ex =
+let write (ex : Exercise) =
     let dir = exerciseRoot
-    let path = Path.Combine(dir, strId ex.Id + ".txt")
-    File.WriteAllText(path, strHtml ex.Html)
+    let path = Path.Combine(dir, strId ex.Source.Id + ".txt")
+    File.WriteAllText(path, withMatter ex)
 
 let desc ex =
-    printfn "%s" (new String('=', 72))
-    printfn "Id: %s" (strId ex.Source.Id)
-    printfn "Link: http://sicp-book.com/%s" ex.UrlPath
-    printfn "Text:"
-    printfn "%s" ex.Text
-    printfn ""
+    printfn "%s" (withMatter ex)
