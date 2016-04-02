@@ -17,8 +17,15 @@ let htmlImages = getDirectory htmlRoot "images"
 
 let htmlStylesheets = getDirectory htmlRoot "stylesheets"
 
-let exerciseRoot = 
-    let relativePath = htmlRoot + @"\..\exercises"
-    let rootPath = (new DirectoryInfo(relativePath)).FullName
-    getDirectory rootPath ""
+let projectRoot = 
+    let relativePath = htmlRoot + @"\..\"
+    let absPath = (new DirectoryInfo(relativePath)).FullName
+    getDirectory absPath ""
+    
+let exerciseRoot = getDirectory projectRoot "exercises"
+
+let exerciseImages = getDirectory exerciseRoot "images"
+
+
+
     

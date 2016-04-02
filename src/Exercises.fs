@@ -38,6 +38,16 @@ let formatPara (m : Match) =
          m.Groups.["line"].Value + NL)
     //|> (fun txt -> txt + NL)
 
+let textImage filename =
+    let file = FileInfo (Path.Combine(exerciseImages, filename + ".txt"))
+    match file.Exists with
+    | false -> sprintf "[image: %s]" filename
+    | true -> File.ReadAllText(file.FullName)
+    
+let handleFigure (m : Match) =
+    let filename = m.Groups.["filename"].Value
+    NL + (textImage filename) + NL
+
 let getText html =
     html        
     |> rxRemove "</?tt>" 
@@ -51,7 +61,9 @@ let getText html =
         let underline = new String('=', title.Length)
         title + NL + underline + NL + NL)
     |> rxReplace """(?<=\n)([A-Z]|[a-z]\. )([^\r\n]+\r?\n)+""" formatPara
+    |> rxReplace """<div align=left><img src="images/(?<filename>ch1-Z-G-3.gif)" border="0"></div>""" handleFigure
     |> rxReplace "[\r\n]*$" (fun m -> NL)
+
 
 let withMatter ex =
     String.Concat(
