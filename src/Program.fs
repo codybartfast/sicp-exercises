@@ -20,7 +20,10 @@ let main argv =
     exercises 
         |> List.iter write
     
-    let xx = exercises //|> List.take 5
+    let xx = 
+        exercises 
+        |> List.skip 9
+        
     xx |> Seq.iter (fun x ->
         Console.Clear ()
         desc x

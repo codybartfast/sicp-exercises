@@ -11,14 +11,18 @@ let NL = "\r\n"
 let lineLength = 72
 let lineLenStr = lineLength.ToString()
 
-let bookUrl = "http://sicp-book.com/"
+let bookUrl path = "http://sicp-book.com/" + path
+
+type Link = {Text:string; Path:string}
 
 type Exercise = {
     Source: ExerciseSrc
     File: SicpFile
     UrlPath: string
+    Id: string
     Html: string
     Text: string
+    Links: Link list
 }
 
 let rxReplace pattern (eval : Match -> string) string = Regex.Replace(string, pattern, eval, RegexOptions.Singleline)
@@ -36,17 +40,30 @@ let formatPara (m : Match) =
     |> rxRemove "(?<![.?]) +(?= )" 
     |> rxReplace ("(?<line>\G.{0," + lineLenStr + "}) ") (fun m->
          m.Groups.["line"].Value + NL)
-    //|> (fun txt -> txt + NL)
-
-let textImage filename =
-    let file = FileInfo (Path.Combine(exerciseImages, filename + ".txt"))
-    match file.Exists with
-    | false -> sprintf "[image: %s]" filename
-    | true -> File.ReadAllText(file.FullName)
     
-let handleFigure (m : Match) =
+let handleImage (m : Match) =
+    let textImage filename =
+        let file = FileInfo (Path.Combine(exerciseImages, filename + ".txt"))
+        match file.Exists with
+        | false -> sprintf "[image: %s]" filename
+        | true -> File.ReadAllText(file.FullName)
     let filename = m.Groups.["filename"].Value
     NL + (textImage filename) + NL
+
+let handleLinks html =
+    let handleLink (links : ResizeArray<Link>) (m: Match) =
+        let urlPath = m.Groups.["path"].Value
+        let text = m.Groups.["text"].Value
+        links.Add(
+          {
+            Text = m.Groups.["text"].Value; 
+            Path = m.Groups.["path"].Value})
+        sprintf "[%s]" text
+    let links = ResizeArray<Link>()
+    let text = 
+        html
+        |> rxReplace """<a\s+href="(?<path>book-Z-H-12.html#%_sec_1.3.4)">(?<text>1.3.4)</a>""" (handleLink links)
+    text, links |> Seq.toList
 
 let getText html =
     html        
@@ -60,30 +77,32 @@ let getText html =
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
         title + NL + underline + NL + NL)
+    |> rxReplace "(''|``)" (fun m -> "\"")
+    |> rxReplace "<i>|</i>|<em>|</em>" (fun m -> "_") 
+    |> rxReplace """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)" border="0"></div>""" handleImage
     |> rxReplace """(?<=\n)([A-Z]|[a-z]\. )([^\r\n]+\r?\n)+""" formatPara
-    |> rxReplace """<div align=left><img src="images/(?<filename>ch1-Z-G-3.gif)" border="0"></div>""" handleFigure
     |> rxReplace "[\r\n]*$" (fun m -> NL)
 
 
-let withMatter ex =
-    String.Concat(
-        String ('=', lineLength), NL, NL,
-        ex.Text, NL,
-        new String('-', lineLength), NL,
-        "[Exercise ", strId ex.Source.Id, "]: ", bookUrl, ex.UrlPath, NL,
-        String ('-', lineLength)
-    )
-    |> fun text -> Regex.Replace(text, "^",  ";   ", RegexOptions.Multiline) 
-        
 
-let exerciseFromSource file (exSrc : ExerciseSrc) = 
+let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) = 
     let html = getHtml exSrc.Html
-    {   Source = exSrc
+    let html, links = handleLinks html
+    let exUrl = (strId file.Id) + "#%_thm_" + (strId exSrc.Id)
+
+    let links = 
+      { Text = "Exercise " + strId exSrc.Id
+        Path = exUrl } :: links
+    
+    let exercise =
+      { Source = exSrc
         File = file
-        UrlPath = (strId file.Id) + "#%_thm_" + (strId exSrc.Id)
+        UrlPath = exUrl
+        Id = strId exSrc.Id
         Html = html
         Text = getText html
-        }
+        Links =  links }
+    exercise
 
 let exercisesFromSubsection file sub  =
         sub.Blocks
@@ -103,7 +122,42 @@ let exercisesFromFile file =
                 |> Seq.collect (exercisesFromSubsection file)
         | _ -> yield! Seq.empty
     }
+
 let allExercises files = files |> Seq.collect exercisesFromFile
+
+let withMatter ex =
+    let double = String ('=', lineLength)
+    let single = String ('-', lineLength)
+
+    let linkLines = 
+        ex.Links
+        |> List.map (fun link ->
+            sprintf "[%s]: %s %s" link.Text (bookUrl link.Path) NL)
+
+    let commented = 
+        List.concat [
+            [
+                //single; NL;
+                double; NL; NL;
+                ex.Text;
+                single; NL;
+                //"[Exercise "; strId ex.Source.Id; "]: "; bookUrl ex.UrlPath; NL;
+               
+            ];
+            linkLines;
+            [ single; NL ];
+        ]
+        |> String.Concat
+        |> fun text -> Regex.Replace(text, "^",  ";   ", RegexOptions.Multiline)    
+    let uncommented =  
+        [
+            NL; NL;
+            sprintf """(output "%s")""" ex.Id;
+            NL; NL; NL;
+            "(end)";   
+        ]        
+        |> String.Concat
+    commented + uncommented
 
 let write (ex : Exercise) =
     let dir = exerciseRoot
