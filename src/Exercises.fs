@@ -2,6 +2,7 @@
 
 open System
 open System.IO
+open System.Text
 open System.Text.RegularExpressions
 
 open Common
@@ -65,29 +66,34 @@ let handleLinks html =
         |> rxReplace """<a\s+href="(?<path>book-Z-H-12.html#%_sec_1.3.4)">(?<text>1.3.4)</a>""" (handleLink links)
     text, links |> Seq.toList
 
+let handleSymbols text = 
+    text
+    |> rxReplace "(''|``)" (fun m -> "\"")
+    |> rxReplace "<sup>2</sup>" (fun m -> "²")
+    // <u>></u> -> ≥
+
 let getText html =
     html        
     |> rxRemove "</?tt>" 
     |> rxReplace "&nbsp;" (fun m -> " ")
     |> rxReplace "&lt;" (fun m -> "<")
-    |> rxReplace "&gt;" (fun m -> "<")
+    |> rxReplace "&gt;" (fun m -> ">")
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(\r?\n){2,}""" (fun m -> NL + NL)
     |> rxReplace """^<b>(?<title>.*?)\.</b>\s*""" (fun m ->
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
         title + NL + underline + NL + NL)
-    |> rxReplace "(''|``)" (fun m -> "\"")
-    |> rxReplace "<i>|</i>|<em>|</em>" (fun m -> "_") 
+    |> rxReplace "<i>|</i>|<em>|</em>" (fun m -> "") 
     |> rxReplace """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)" border="0"></div>""" handleImage
+    |> handleSymbols
     |> rxReplace """(?<=\n)([A-Z]|[a-z]\. )([^\r\n]+\r?\n)+""" formatPara
     |> rxReplace "[\r\n]*$" (fun m -> NL)
 
 
-
 let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) = 
     let html = getHtml exSrc.Html
-    let html, links = handleLinks html
+    let text, links = handleLinks html
     let exUrl = (strId file.Id) + "#%_thm_" + (strId exSrc.Id)
 
     let links = 
@@ -100,7 +106,7 @@ let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) =
         UrlPath = exUrl
         Id = strId exSrc.Id
         Html = html
-        Text = getText html
+        Text = getText text
         Links =  links }
     exercise
 
@@ -137,15 +143,12 @@ let withMatter ex =
     let commented = 
         List.concat [
             [
-                //single; NL;
                 double; NL; NL;
                 ex.Text;
                 single; NL;
-                //"[Exercise "; strId ex.Source.Id; "]: "; bookUrl ex.UrlPath; NL;
-               
             ];
             linkLines;
-            [ single; NL ];
+            [ single];
         ]
         |> String.Concat
         |> fun text -> Regex.Replace(text, "^",  ";   ", RegexOptions.Multiline)    
@@ -162,7 +165,7 @@ let withMatter ex =
 let write (ex : Exercise) =
     let dir = exerciseRoot
     let path = Path.Combine(dir, strId ex.Source.Id + ".txt")
-    File.WriteAllText(path, withMatter ex)
+    File.WriteAllText( path, withMatter ex, Encoding.UTF8)
 
 let desc ex =
     printfn "%s" (withMatter ex)
