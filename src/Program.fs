@@ -7,6 +7,9 @@ open Model
 
 
 // http://www.fileformat.info/info/unicode/char/b2/browsertest.htm
+// http://www.sunilpatel.co.uk/wp-content/uploads/2010/08/Lowercase-Greek-Symbols.jpg
+// http://symbolcodes.tlt.psu.edu/bylanguage/mathchart.html
+
 [<EntryPoint>]
 let main argv =
     let files = Files.files ()
@@ -25,7 +28,7 @@ let main argv =
     
     let xx = 
         exercises 
-        |> List.skip 9
+        |> List.skip 14
         
     xx |> Seq.iter (fun x ->
         Console.Clear ()

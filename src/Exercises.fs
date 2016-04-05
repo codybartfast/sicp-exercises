@@ -8,7 +8,7 @@ open System.Text.RegularExpressions
 open Common
 open Model
 
-let NL = "  \r\n" // spaces to make Markdown friendly
+let NL = "\r\n"
 let lineLength = 72
 let lineLenStr = lineLength.ToString()
 
@@ -39,7 +39,7 @@ let formatPara (m : Match) =
     m.Value
     |> rxReplace "\s*\n" (fun m -> " ")
     |> rxRemove "(?<![.?]) +(?= )" 
-    |> rxReplace ("(?<line>\G.{0," + lineLenStr + "}) ") (fun m->
+    |> rxReplace ("(?<line>\G.{0," + lineLenStr + "}) +") (fun m->
          m.Groups.["line"].Value + NL)
     
 let handleImage (m : Match) =
@@ -78,7 +78,7 @@ let handleRef (links : ResizeArray<Link>) prefix (m: Match) =
 let handleLinks (links : ResizeArray<Link>) html =
     html
     |> rxReplace 
-        """<a\s+href="(?<path>book-Z-H-12.html#%_sec_1.3.4)">(?<text>1.3.4)</a>""" 
+        """<a\s+href="(?<path>(book-Z-H-\d+.html)?#%_sec_[.\d]+)">(?<text>[.\d]+)</a>""" 
         (handleRef links "Link")
 
 let handleFootnotes (links : ResizeArray<Link>) html =
@@ -86,13 +86,23 @@ let handleFootnotes (links : ResizeArray<Link>) html =
     |> rxReplace 
         """<a name="call_footnote_Temp_\d+" href="(?<path>#footnote_Temp_\d+)"><sup><small>(?<text>\d+)</small></sup></a>""" 
         ((handleRef links "Footnote") >> sup)
-  
+
+let handleSymbolImage (m : Match) =
+    match m.Groups.["inum"].Value with
+    | "11" -> "ɸ"
+    | "12" -> "ψ"
+    | "13" -> "√"
+    | _ -> m.Value
 
 let handleSymbols text = 
     text
     |> rxReplace "(''|``)" (fun m -> "\"")
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
+    |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
     |> rxReplace "<u>></u>\s*" (fun m -> "≥")
+    |> rxReplace 
+        """<img src="images/book-Z-G-D-(?<inum>11|12|13).gif" border="0">""" 
+        handleSymbolImage
 
 let getText html =
     html        
@@ -100,16 +110,16 @@ let getText html =
     |> rxReplace "&nbsp;" (fun m -> " ")
     |> rxReplace "&lt;" (fun m -> "<")
     |> rxReplace "&gt;" (fun m -> ">")
-    |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """^<b>(?<title>.*?)\.</b>\s*""" (fun m ->
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
         title + NL + underline + NL + NL)
     |> rxReplace "<i>|</i>|<em>|</em>" (fun m -> "") 
-    |> rxReplace """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)" border="0"></div>""" handleImage
     |> handleSymbols
-    |> rxReplace """(\r?\n){2,}""" (fun m -> NL + NL)
+    |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
+    |> rxReplace """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)" border="0"></div>""" handleImage
     |> rxReplace """(?<=\n)([A-Z]|[a-z]\. )([^\r\n]+\r?\n)+""" formatPara
+    |> rxReplace """(\r?\n){2,}""" (fun m -> NL + NL)
     |> rxReplace "[\r\n]*$" (fun m -> NL)
 
 
