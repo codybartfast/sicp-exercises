@@ -1,9 +1,12 @@
 ﻿open System
+open System.Text
 
 open Exercises
 open Outline
 open Model
 
+
+// http://www.fileformat.info/info/unicode/char/b2/browsertest.htm
 [<EntryPoint>]
 let main argv =
     let files = Files.files ()
@@ -22,7 +25,7 @@ let main argv =
     
     let xx = 
         exercises 
-        |> List.skip 10
+        |> List.skip 9
         
     xx |> Seq.iter (fun x ->
         Console.Clear ()
@@ -30,7 +33,6 @@ let main argv =
         Console.ReadKey () |> ignore
         )
     
-
     printfn "%s" "Done."
     Console.ReadKey() |> ignore
     0

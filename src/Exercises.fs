@@ -8,7 +8,7 @@ open System.Text.RegularExpressions
 open Common
 open Model
 
-let NL = "\r\n"
+let NL = "  \r\n" // spaces to make Markdown friendly
 let lineLength = 72
 let lineLenStr = lineLength.ToString()
 
@@ -51,26 +51,48 @@ let handleImage (m : Match) =
     let filename = m.Groups.["filename"].Value
     NL + (textImage filename) + NL
 
-let handleLinks html =
-    let handleLink (links : ResizeArray<Link>) (m: Match) =
-        let urlPath = m.Groups.["path"].Value
-        let text = m.Groups.["text"].Value
-        links.Add(
-          {
-            Text = m.Groups.["text"].Value; 
-            Path = m.Groups.["path"].Value})
-        sprintf "[%s]" text
-    let links = ResizeArray<Link>()
-    let text = 
-        html
-        |> rxReplace """<a\s+href="(?<path>book-Z-H-12.html#%_sec_1.3.4)">(?<text>1.3.4)</a>""" (handleLink links)
-    text, links |> Seq.toList
+
+let sup (text : string) =
+    let supChar c =
+        match c with 
+        | '[' -> '⁽'
+        | '1' -> '¹'
+        | '2' -> '²'
+        | '3' -> '³'
+        | '5' -> '⁵'
+        | ']' -> '⁾'
+        | c -> c
+    text.ToCharArray()
+        |> Array.map supChar
+        |> String
+
+let handleRef (links : ResizeArray<Link>) prefix (m: Match) =
+    let urlPath = m.Groups.["path"].Value
+    let text = m.Groups.["text"].Value
+    links.Add(
+        {
+        Text = sprintf "%s %s" prefix text; 
+        Path = urlPath})
+    sprintf "[%s]" text
+
+let handleLinks (links : ResizeArray<Link>) html =
+    html
+    |> rxReplace 
+        """<a\s+href="(?<path>book-Z-H-12.html#%_sec_1.3.4)">(?<text>1.3.4)</a>""" 
+        (handleRef links "Link")
+
+let handleFootnotes (links : ResizeArray<Link>) html =
+    html
+    |> rxReplace 
+        """<a name="call_footnote_Temp_\d+" href="(?<path>#footnote_Temp_\d+)"><sup><small>(?<text>\d+)</small></sup></a>""" 
+        ((handleRef links "Footnote") >> sup)
+  
 
 let handleSymbols text = 
     text
     |> rxReplace "(''|``)" (fun m -> "\"")
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
-    // <u>></u> -> ≥
+    |> rxReplace "<u>></u>\s*" (fun m -> "≥")
 
 let getText html =
     html        
@@ -79,7 +101,6 @@ let getText html =
     |> rxReplace "&lt;" (fun m -> "<")
     |> rxReplace "&gt;" (fun m -> ">")
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
-    |> rxReplace """(\r?\n){2,}""" (fun m -> NL + NL)
     |> rxReplace """^<b>(?<title>.*?)\.</b>\s*""" (fun m ->
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
@@ -87,27 +108,40 @@ let getText html =
     |> rxReplace "<i>|</i>|<em>|</em>" (fun m -> "") 
     |> rxReplace """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)" border="0"></div>""" handleImage
     |> handleSymbols
+    |> rxReplace """(\r?\n){2,}""" (fun m -> NL + NL)
     |> rxReplace """(?<=\n)([A-Z]|[a-z]\. )([^\r\n]+\r?\n)+""" formatPara
     |> rxReplace "[\r\n]*$" (fun m -> NL)
 
 
 let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) = 
+    let addFile ref = (strId file.Id) + ref
+    let links = ResizeArray<Link>()
+    let exLink =     
+      { Text = "Exercise " + strId exSrc.Id
+        Path = "#%_thm_" + (strId exSrc.Id)}
+    links.Add exLink
+
     let html = getHtml exSrc.Html
-    let text, links = handleLinks html
-    let exUrl = (strId file.Id) + "#%_thm_" + (strId exSrc.Id)
+    let text = 
+        html
+        |> handleLinks links 
+        |> handleFootnotes links
 
     let links = 
-      { Text = "Exercise " + strId exSrc.Id
-        Path = exUrl } :: links
+        links
+        |> Seq.map (fun link ->
+            if link.Path.StartsWith("#") then
+                { link with Path = addFile link.Path}
+            else link)
     
     let exercise =
       { Source = exSrc
         File = file
-        UrlPath = exUrl
+        UrlPath = exLink.Path
         Id = strId exSrc.Id
         Html = html
         Text = getText text
-        Links =  links }
+        Links =  links |> Seq.toList }
     exercise
 
 let exercisesFromSubsection file sub  =
@@ -138,8 +172,8 @@ let withMatter ex =
     let linkLines = 
         ex.Links
         |> List.map (fun link ->
-            sprintf "[%s]: %s %s" link.Text (bookUrl link.Path) NL)
-
+            ("[" + link.Text + "]: ").PadRight(17) + bookUrl link.Path + NL)
+            
     let commented = 
         List.concat [
             [

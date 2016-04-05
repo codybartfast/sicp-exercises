@@ -1,5 +1,7 @@
 # Book:
-exercises/  
+!/exercices
+/exercises/*
+!/exercises/images
 
 # Windows image file caches
 Thumbs.db
