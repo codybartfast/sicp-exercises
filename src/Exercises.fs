@@ -36,6 +36,7 @@ let getHtml src =
     |> rxRemove """(<p>\s*)*$""" 
 
 let formatPara (m : Match) =
+    //">" +
     m.Value
     |> rxReplace "\s*\n" (fun m -> " ")
     |> rxRemove "(?<![.?]) +(?= )" 
@@ -56,22 +57,27 @@ let sup (text : string) =
     let supChar c =
         match c with 
         | '[' -> '⁽'
+        | '0' -> '⁰'
         | '1' -> '¹'
         | '2' -> '²'
         | '3' -> '³'
+        | '4' -> '⁴'
         | '5' -> '⁵'
+        //| '6' -> '⁶'
+        //| '7' -> '⁷'
+        //| '8' -> '⁸'
+        //| '9' -> '⁹'
         | ']' -> '⁾'
         | c -> c
     text.ToCharArray()
         |> Array.map supChar
-        |> String
+        |> String   
 
 let handleRef (links : ResizeArray<Link>) prefix (m: Match) =
     let urlPath = m.Groups.["path"].Value
     let text = m.Groups.["text"].Value
     links.Add(
-        {
-        Text = sprintf "%s %s" prefix text; 
+      { Text = sprintf "%s %s" prefix text; 
         Path = urlPath})
     sprintf "[%s]" text
 
@@ -80,6 +86,12 @@ let handleLinks (links : ResizeArray<Link>) html =
     |> rxReplace 
         """<a\s+href="(?<path>(book-Z-H-\d+.html)?#%_sec_[.\d]+)">(?<text>[.\d]+)</a>""" 
         (handleRef links "Link")
+
+let handleExLinks (links : ResizeArray<Link>) html =
+    html
+    |> rxReplace
+        """<a\s*href="(?<path>#%_thm_\d\.\d+)">(?<text>\d\.\d+)</a>"""
+        (handleRef links "Exercise")
 
 let handleFootnotes (links : ResizeArray<Link>) html =
     html
@@ -92,6 +104,7 @@ let handleSymbolImage (m : Match) =
     | "11" -> "ɸ"
     | "12" -> "ψ"
     | "13" -> "√"
+    | "20" -> "≈" // not utf-8
     | _ -> m.Value
 
 let handleSymbols text = 
@@ -100,8 +113,9 @@ let handleSymbols text =
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
     |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
     |> rxReplace "<u>></u>\s*" (fun m -> "≥")
+    |> rxReplace "<sup>n/2</sup>" (fun m -> "^(n/2)")
     |> rxReplace 
-        """<img src="images/book-Z-G-D-(?<inum>11|12|13).gif" border="0">""" 
+        """<img src="images/book-Z-G-D-(?<inum>11|12|13|20).gif" border="0">""" 
         handleSymbolImage
 
 let getText html =
@@ -117,9 +131,9 @@ let getText html =
     |> rxReplace "<i>|</i>|<em>|</em>" (fun m -> "") 
     |> handleSymbols
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
-    |> rxReplace """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)" border="0"></div>""" handleImage
-    |> rxReplace """(?<=\n)([A-Z]|[a-z]\. )([^\r\n]+\r?\n)+""" formatPara
-    |> rxReplace """(\r?\n){2,}""" (fun m -> NL + NL)
+    |> rxReplace """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0"></div>""" handleImage
+    |> rxReplace """(?<=\n)([A-Z]|[a-w])([^\r\n]+\r?\n)+""" formatPara
+    |> rxReplace """(\r?\n)( *\r?\n){1,}""" (fun m -> NL + NL)
     |> rxReplace "[\r\n]*$" (fun m -> NL)
 
 
@@ -135,7 +149,8 @@ let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) =
     let text = 
         html
         |> handleLinks links 
-        |> handleFootnotes links
+        |> handleExLinks links
+        |> handleFootnotes links 
 
     let links = 
         links

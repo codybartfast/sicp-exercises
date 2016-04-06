@@ -28,13 +28,12 @@ let main argv =
     
     let xx = 
         exercises 
-        |> List.skip 14
+        |> List.skip 17
         
     xx |> Seq.iter (fun x ->
         Console.Clear ()
         desc x
-        Console.ReadKey () |> ignore
-        )
+        Console.ReadKey () |> ignore )
     
     printfn "%s" "Done."
     Console.ReadKey() |> ignore
