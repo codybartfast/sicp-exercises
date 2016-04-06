@@ -90,7 +90,7 @@ let handleLinks (links : ResizeArray<Link>) html =
 let handleExLinks (links : ResizeArray<Link>) html =
     html
     |> rxReplace
-        """<a\s*href="(?<path>#%_thm_\d\.\d+)">(?<text>\d\.\d+)</a>"""
+        """<a\s*href="(book-Z-H-\d+.html)?(?<path>#%_thm_\d\.\d+)">(?<text>\d\.\d+)</a>"""
         (handleRef links "Exercise")
 
 let handleFootnotes (links : ResizeArray<Link>) html =
@@ -105,7 +105,11 @@ let handleSymbolImage (m : Match) =
     | "12" -> "ψ"
     | "13" -> "√"
     | "20" -> "≈" // not utf-8
+    | "14" -> "←" // not utf-8
     | _ -> m.Value
+
+let handleSubs (m : Match) =
+    sprintf "_(%s)" m.Groups.["sub"].Value
 
 let handleSymbols text = 
     text
@@ -114,8 +118,8 @@ let handleSymbols text =
     |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
     |> rxReplace "<u>></u>\s*" (fun m -> "≥")
     |> rxReplace "<sup>n/2</sup>" (fun m -> "^(n/2)")
-    |> rxReplace 
-        """<img src="images/book-Z-G-D-(?<inum>11|12|13|20).gif" border="0">""" 
+    |> rxReplace "<sub>(?<sub>[^<]+)</sub>" handleSubs
+    |> rxReplace  """<img src="images/book-Z-G-D-(?<inum>11|12|13|20|14).gif" border="0">""" 
         handleSymbolImage
 
 let getText html =
