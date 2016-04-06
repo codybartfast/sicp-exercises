@@ -42,27 +42,7 @@ let formatPara (m : Match) =
     |> rxReplace "\s*\n" (fun m -> " ")
     |> rxRemove "(?<![.?]) +(?= )" 
     |> rxReplace ("(?<line>\G.{0," + lineLenStr + "}) +") (fun m->
-         m.Groups.["line"].Value + NL)
-    
-let sup (text : string) =
-    let supChar c =
-        match c with 
-        | '[' -> '⁽'
-        | '0' -> '⁰'
-        | '1' -> '¹'
-        | '2' -> '²'
-        | '3' -> '³'
-        | '4' -> '⁴'
-        | '5' -> '⁵'
-        //| '6' -> '⁶'
-        //| '7' -> '⁷'
-        //| '8' -> '⁸'
-        //| '9' -> '⁹'
-        | ']' -> '⁾'
-        | c -> c
-    text.ToCharArray()
-        |> Array.map supChar
-        |> String   
+         m.Groups.["line"].Value + NL)    
 
 let handleRef (links : ResizeArray<Link>) prefix (m: Match) =
     let urlPath = m.Groups.["path"].Value
@@ -84,12 +64,6 @@ let handleExLinks (links : ResizeArray<Link>) html =
         """<a\s*href="(book-Z-H-\d+.html)?(?<path>#%_thm_\d\.\d+)">(?<text>\d\.\d+)</a>"""
         (handleRef links "Exercise")
 
-let handleFootnotes (links : ResizeArray<Link>) html =
-    html
-    |> rxReplace 
-        """<a name="call_footnote_Temp_\d+" href="(?<path>#footnote_Temp_\d+)"><sup><small>(?<text>\d+)</small></sup></a>""" 
-        ((handleRef links "Footnote") >> sup)
-
 let handleFootnoteRef (links : ResizeArray<Link>) html =
     html
     |> rxReplace
@@ -105,6 +79,31 @@ let handleImage (m : Match) =
     let filename = m.Groups.["filename"].Value
     NL + (textImage filename) + NL
 
+let sup (text : string) =
+    let supChar c =
+        match c with 
+        | '[' -> '⁽'
+        | '0' -> '⁰'
+        | '1' -> '¹'
+        | '2' -> '²'
+        | '3' -> '³'
+        | '4' -> '⁴'
+        | '5' -> '⁵'
+        //| '6' -> '⁶'
+        //| '7' -> '⁷'
+        //| '8' -> '⁸'
+        //| '9' -> '⁹'
+        | ']' -> '⁾'
+        | c -> c
+    text.ToCharArray()
+        |> Array.map supChar
+        |> String   
+
+// ₁ \u2081 ₂ \u2082
+let handleSubs (m : Match) =
+    match m.Groups.["sub"].Value with
+    | "i" -> "ᵢ"  // \u1D62
+    | sub -> sprintf "_(%s)" sub
 
 let handleSymbolImage (m : Match) =
     match m.Groups.["inum"].Value with
@@ -113,21 +112,25 @@ let handleSymbolImage (m : Match) =
     | "13" -> "√"
     | "20" -> "≈" 
     | "14" -> "←" // \u2190
-    | "3" -> "θ"
-    | "9" -> "π"
+    | "3"  -> "θ"
+    | "9"  -> "π"
     | "17" -> "→" // \u2192
+    | "6"  -> "λ" // \u03BB
     | _ -> m.Value
 
-let handleSubs (m : Match) =
-    match m.Groups.["sub"].Value with
-    | "i" -> "ᵢ"  // \u1D62
-    | sub -> sprintf "_(%s)" sub
+let handleFootnotes (links : ResizeArray<Link>) html =
+    html
+    |> rxReplace 
+        """<a name="call_footnote_Temp_\d+" href="(?<path>#footnote_Temp_\d+)"><sup><small>(?<text>\d+)</small></sup></a>""" 
+        ((handleRef links "Footnote") >> sup)
 
 let handleSymbols text = 
     text
     |> rxReplace "(''|``|&quot;)" (fun m -> "\"")
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
     |> rxReplace "<sup>3</sup>" (fun m -> "³")
+    |> rxReplace "<sup>a</sup>" (fun m -> "^a")
+    |> rxReplace "<sup>b</sup>" (fun m -> "^b")
     |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
     |> rxReplace "<u>></u>\s*" (fun m -> "≥")
     |> rxReplace "<sup>x</sup>" (fun m -> "^x")
@@ -135,7 +138,7 @@ let handleSymbols text =
     |> rxReplace "<sup>n-1</sup>" (fun m -> "ⁿ⁻¹")
     |> rxReplace "<sub>(?<sub>[^<]+)</sub>" handleSubs
     |> rxReplace ("""<img src="images/book-Z-G-D-(?<inum>""" +
-        "11|12|13|20|14|3|9|17" 
+        "11|12|13|20|14|3|9|17|6" 
         + """).gif" border="0">""")
         handleSymbolImage
 
