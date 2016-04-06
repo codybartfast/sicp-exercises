@@ -70,6 +70,12 @@ let handleFootnoteRef (links : ResizeArray<Link>) html =
         """<a href="(?<path>#footnote_Temp_\d+)">(?<text>47)</a>"""
         (handleRef links "Footnote")
 
+let handleFigureRef (links : ResizeArray<Link>) html =
+    html
+    |> rxReplace
+        """<a href="(?<path>#%_fig_\d.\d+)">(?<text>2.6)</a>"""
+        (handleRef links "Figure")
+
 let handleImage (m : Match) =
     let textImage filename =
         let file = FileInfo (Path.Combine(exerciseImages, filename + ".txt"))
@@ -89,10 +95,10 @@ let sup (text : string) =
         | '3' -> '³'
         | '4' -> '⁴'
         | '5' -> '⁵'
-        //| '6' -> '⁶'
-        //| '7' -> '⁷'
-        //| '8' -> '⁸'
-        //| '9' -> '⁹'
+        | '6' -> '⁶'
+        | '7' -> '⁷'
+        | '8' -> '⁸'
+        | '9' -> '⁹'
         | ']' -> '⁾'
         | c -> c
     text.ToCharArray()
@@ -103,6 +109,7 @@ let sup (text : string) =
 let handleSubs (m : Match) =
     match m.Groups.["sub"].Value with
     | "i" -> "ᵢ"  // \u1D62
+    | "0" -> "₀"  
     | sub -> sprintf "_(%s)" sub
 
 let handleSymbolImage (m : Match) =
@@ -129,9 +136,11 @@ let handleSymbols text =
     |> rxReplace "(''|``|&quot;)" (fun m -> "\"")
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
     |> rxReplace "<sup>3</sup>" (fun m -> "³")
+    |> rxReplace "<sup>5</sup>" (fun m -> "⁵")
     |> rxReplace "<sup>a</sup>" (fun m -> "^a")
     |> rxReplace "<sup>b</sup>" (fun m -> "^b")
     |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
+    |> rxReplace "<u><</u>\s*" (fun m -> "≤")
     |> rxReplace "<u>></u>\s*" (fun m -> "≥")
     |> rxReplace "<sup>x</sup>" (fun m -> "^x")
     |> rxReplace "<sup>n/2</sup>" (fun m -> "^(n/2)")
@@ -179,6 +188,7 @@ let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) =
         |> handleExLinks links
         |> handleFootnotes links 
         |> handleFootnoteRef links
+        |> handleFigureRef links
 
     let links = 
         links
