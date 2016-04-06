@@ -9,6 +9,7 @@ open Common
 open Model
 
 let NL = "\r\n"
+let NLNL = NL + NL
 let lineLength = 72
 let lineLenStr = lineLength.ToString()
 
@@ -43,16 +44,6 @@ let formatPara (m : Match) =
     |> rxReplace ("(?<line>\G.{0," + lineLenStr + "}) +") (fun m->
          m.Groups.["line"].Value + NL)
     
-let handleImage (m : Match) =
-    let textImage filename =
-        let file = FileInfo (Path.Combine(exerciseImages, filename + ".txt"))
-        match file.Exists with
-        | false -> sprintf "[image: %s]" filename
-        | true -> File.ReadAllText(file.FullName)
-    let filename = m.Groups.["filename"].Value
-    NL + (textImage filename) + NL
-
-
 let sup (text : string) =
     let supChar c =
         match c with 
@@ -85,7 +76,7 @@ let handleLinks (links : ResizeArray<Link>) html =
     html
     |> rxReplace 
         """<a\s+href="(?<path>(book-Z-H-\d+.html)?#%_sec_[.\d]+)">(?<text>[.\d]+)</a>""" 
-        (handleRef links "Link")
+        (handleRef links "Section")
 
 let handleExLinks (links : ResizeArray<Link>) html =
     html
@@ -99,27 +90,53 @@ let handleFootnotes (links : ResizeArray<Link>) html =
         """<a name="call_footnote_Temp_\d+" href="(?<path>#footnote_Temp_\d+)"><sup><small>(?<text>\d+)</small></sup></a>""" 
         ((handleRef links "Footnote") >> sup)
 
+let handleFootnoteRef (links : ResizeArray<Link>) html =
+    html
+    |> rxReplace
+        """<a href="(?<path>#footnote_Temp_\d+)">(?<text>47)</a>"""
+        (handleRef links "Footnote")
+
+let handleImage (m : Match) =
+    let textImage filename =
+        let file = FileInfo (Path.Combine(exerciseImages, filename + ".txt"))
+        match file.Exists with
+        | false -> sprintf "%s[image: %s]%s" NL filename NL
+        | true -> NL + File.ReadAllText(file.FullName) + NL
+    let filename = m.Groups.["filename"].Value
+    NL + (textImage filename) + NL
+
+
 let handleSymbolImage (m : Match) =
     match m.Groups.["inum"].Value with
     | "11" -> "ɸ"
     | "12" -> "ψ"
     | "13" -> "√"
-    | "20" -> "≈" // not utf-8
-    | "14" -> "←" // not utf-8
+    | "20" -> "≈" 
+    | "14" -> "←" // \u2190
+    | "3" -> "θ"
+    | "9" -> "π"
+    | "17" -> "→" // \u2192
     | _ -> m.Value
 
 let handleSubs (m : Match) =
-    sprintf "_(%s)" m.Groups.["sub"].Value
+    match m.Groups.["sub"].Value with
+    | "i" -> "ᵢ"  // \u1D62
+    | sub -> sprintf "_(%s)" sub
 
 let handleSymbols text = 
     text
-    |> rxReplace "(''|``)" (fun m -> "\"")
+    |> rxReplace "(''|``|&quot;)" (fun m -> "\"")
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
+    |> rxReplace "<sup>3</sup>" (fun m -> "³")
     |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
     |> rxReplace "<u>></u>\s*" (fun m -> "≥")
+    |> rxReplace "<sup>x</sup>" (fun m -> "^x")
     |> rxReplace "<sup>n/2</sup>" (fun m -> "^(n/2)")
+    |> rxReplace "<sup>n-1</sup>" (fun m -> "ⁿ⁻¹")
     |> rxReplace "<sub>(?<sub>[^<]+)</sub>" handleSubs
-    |> rxReplace  """<img src="images/book-Z-G-D-(?<inum>11|12|13|20|14).gif" border="0">""" 
+    |> rxReplace ("""<img src="images/book-Z-G-D-(?<inum>""" +
+        "11|12|13|20|14|3|9|17" 
+        + """).gif" border="0">""")
         handleSymbolImage
 
 let getText html =
@@ -135,8 +152,11 @@ let getText html =
     |> rxReplace "<i>|</i>|<em>|</em>" (fun m -> "") 
     |> handleSymbols
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
-    |> rxReplace """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0"></div>""" handleImage
+    |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
     |> rxReplace """(?<=\n)([A-Z]|[a-w])([^\r\n]+\r?\n)+""" formatPara
+    |> rxReplace 
+        """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0"></div>""" 
+        handleImage
     |> rxReplace """(\r?\n)( *\r?\n){1,}""" (fun m -> NL + NL)
     |> rxReplace "[\r\n]*$" (fun m -> NL)
 
@@ -155,6 +175,7 @@ let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) =
         |> handleLinks links 
         |> handleExLinks links
         |> handleFootnotes links 
+        |> handleFootnoteRef links
 
     let links = 
         links
@@ -211,7 +232,7 @@ let withMatter ex =
                 single; NL;
             ];
             linkLines;
-            [ single];
+            [single];
         ]
         |> String.Concat
         |> fun text -> Regex.Replace(text, "^",  ";   ", RegexOptions.Multiline)    
