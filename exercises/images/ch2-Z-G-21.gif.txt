@@ -3,10 +3,10 @@
 returns the sum ∑ᵢ vᵢwᵢ
 
 (matrix-*-vector m v) 
-returns the vector t, where t_(i) = ∑_(j) m_(ij).v_(j)
-
+returns the vector t, where t_(i) = ∑ m_(ij).v_(j)
+                                    J
 (matrix-*-matrix m n) 
-returns the matrix p, where p_(ij) = ∑_(k) m_(ik).n_(kj)
-
+returns the matrix p, where p_(ij) = ∑ m_(ik).n_(kj)
+                                     k
 (transpose m)         
 returns the matrix n, where n_(ij) = m_(ji)

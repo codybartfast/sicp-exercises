@@ -119,6 +119,8 @@ let sup (text : string) =
 // ₁ \u2081 ₂ \u2082
 let handleSubs (m : Match) =
     match m.Groups.["sub"].Value with
+    //| "1" -> "₁"  // \u2081
+    //| "2" -> "₂"  // \u2082
     | "i" -> "ᵢ"  // \u1D62
     | "0" -> "₀"  
     | sub -> sprintf "_(%s)" sub
@@ -144,7 +146,8 @@ let handleFootnotes (links : ResizeArray<Link>) html =
 
 let handleSymbols text = 
     text
-    |> rxReplace "(''|``|&quot;)" (fun m -> "\"")
+    |> rxReplace "``(?<quoted>[^`)<]+)''" (fun m ->  sprintf "\"%s\"" m.Groups.["quoted"].Value)
+    |> rxReplace "(&quot;)" (fun m -> "\"")
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
     |> rxReplace "<sup>3</sup>" (fun m -> "³")
     |> rxReplace "<sup>5</sup>" (fun m -> "⁵")
@@ -172,7 +175,7 @@ let getText html =
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
         title + NL + underline + NL + NL)
-    |> rxReplace "<i>|</i>|<em>|</em>" (fun m -> "") 
+    |> rxReplace "<i>|</i>|<em>|</em>|<strong>|</strong>" (fun m -> "") 
     |> handleSymbols
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
