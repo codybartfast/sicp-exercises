@@ -212,6 +212,7 @@ let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) =
 
     let links = 
         links
+        |> Seq.distinctBy(fun l -> l.Text)
         |> Seq.map (fun link ->
             if link.Path.StartsWith("#") then
                 { link with Path = addFile link.Path}
