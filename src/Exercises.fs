@@ -73,17 +73,28 @@ let handleFootnoteRef (links : ResizeArray<Link>) html =
 let handleFigureRef (links : ResizeArray<Link>) html =
     html
     |> rxReplace
-        """<a href="(?<path>#%_fig_\d.\d+)">(?<text>2.6)</a>"""
+        """<a href="(?<path>#%_fig_\d.\d+)">(?<text>\d\.\d+)</a>"""
         (handleRef links "Figure")
 
+let textImage kind filename =
+    let file = FileInfo (Path.Combine(exerciseImages, filename + ".txt"))
+    match file.Exists with
+    | true ->  File.ReadAllText(file.FullName)
+    | false -> sprintf "[%s: %s]" kind filename
+
 let handleImage (m : Match) =
-    let textImage filename =
-        let file = FileInfo (Path.Combine(exerciseImages, filename + ".txt"))
-        match file.Exists with
-        | false -> sprintf "%s[image: %s]%s" NL filename NL
-        | true -> NL + File.ReadAllText(file.FullName) + NL
     let filename = m.Groups.["filename"].Value
-    NL + (textImage filename) + NL
+    NLNL + (textImage "Image" filename) + NLNL
+
+let handleFigure (m : Match) =
+    let filename = m.Groups.["filename"].Value
+    let id = m.Groups.["id"].Value
+    let text = m.Groups.["text"].Value
+    NLNL + 
+        textImage "Figure" filename
+        + NLNL
+        + sprintf "Figure %s  %s" id text
+        + NLNL
 
 let sup (text : string) =
     let supChar c =
@@ -166,6 +177,15 @@ let getText html =
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
     |> rxReplace """(?<=\n)([A-Z]|[a-w])([^\r\n]+\r?\n)+""" formatPara
+    |> rxReplace """(?x)
+        <a\s*name=[^<]+</a>\s*<div[^<]+<table[^<]+<tr><td><img\s*src=
+            "images/(?<filename>ch\d-Z-G-\d+\.gif)"        
+        [^<]+<[^<]+<[^<]+<caption[^<]+<div [^<]+<b>Figure\s*
+            (?<id>\d\.\d+)
+        :</b>\s*        
+            (?<text>[^<]+)        
+        </div>\s*</caption><tr><td>\s*</td></tr></table></div>"""
+        handleFigure
     |> rxReplace 
         """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0"></div>""" 
         handleImage
