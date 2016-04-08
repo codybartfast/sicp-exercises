@@ -29,6 +29,13 @@ type Exercise = {
 
 let rxReplace pattern (eval : Match -> string) string = Regex.Replace(string, pattern, eval, RegexOptions.Singleline)
 let rxRemove pattern string = rxReplace pattern (fun s -> "") string
+let rxList pattern string = 
+    string
+    |> (fun table -> Regex.Matches(table, pattern, RegexOptions.Singleline))
+    |> Seq.cast<Match>
+    |> Seq.map(fun m -> m.Value)
+    |> List.ofSeq
+
 
 let getHtml src =
     src
@@ -119,8 +126,9 @@ let sup (text : string) =
 // ₁ \u2081 ₂ \u2082
 let handleSubs (m : Match) =
     match m.Groups.["sub"].Value with
-    //| "1" -> "₁"  // \u2081
-    //| "2" -> "₂"  // \u2082
+    | "1" -> "₁"  // \u2081
+    | "2" -> "₂"  // \u2082
+    | "3" -> "₃"  // \u2083
     | "i" -> "ᵢ"  // \u1D62
     | "0" -> "₀"  
     | sub -> sprintf "_(%s)" sub
@@ -165,12 +173,41 @@ let handleSymbols text =
         + """).gif" border="0">""")
         handleSymbolImage
 
+let handleTable (m : Match) =
+    let rec transpose  =
+        function
+        | (_::_)::_ as M -> 
+            (List.map List.head M) :: transpose (List.map List.tail M)
+        | _ -> []
+    let rowStrings = 
+        m.Value
+        |> rxList "(?<=<tr>).*?(?=</tr>)"
+    let rows =
+        rowStrings
+        |> List.map (rxList @"(?<=<td[^>]+>\s*)[^<]+?(?=\s*</td>)")
+    let cols = transpose rows
+    let cellLengths = 
+        cols
+        |> List.map (fun col ->
+            col
+            |> List.map(fun cell -> cell.Length)
+            |> List.max )
+    NLNL +
+      ( rows
+        |> List.map (fun row ->
+            (row, cellLengths) ||> List.map2 (fun cell len -> cell.PadRight(len))
+            |> String.concat " ")
+        |> String.concat "\r\n")
+        + NLNL
+
+
 let getText html =
     html        
-    |> rxRemove "</?tt>" 
+    |> rxRemove "</?(tt|ul)>|" 
     |> rxReplace "&nbsp;" (fun m -> " ")
     |> rxReplace "&lt;" (fun m -> "<")
     |> rxReplace "&gt;" (fun m -> ">")
+    |> rxReplace "<li>" (fun m -> "* ")
     |> rxReplace """^<b>(?<title>.*?)\.</b>\s*""" (fun m ->
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
@@ -189,6 +226,7 @@ let getText html =
             (?<text>[^<]+)        
         </div>\s*</caption><tr><td>\s*</td></tr></table></div>"""
         handleFigure
+    |> rxReplace """<table\ .+?BOOM.+?</table>""" handleTable
     |> rxReplace 
         """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0"></div>""" 
         handleImage
