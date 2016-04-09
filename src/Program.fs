@@ -28,7 +28,7 @@ let main argv =
     
     let xx = 
         exercises 
-        |> List.skip 192
+        |> List.skip 201
         
     xx |> Seq.iter (fun x ->
         Console.Clear ()

@@ -74,7 +74,7 @@ let handleExLinks (links : ResizeArray<Link>) html =
 let handleFootnoteRef (links : ResizeArray<Link>) html =
     html
     |> rxReplace
-        """<a href="(?<path>#footnote_Temp_\d+)">(?<text>\d+)</a>"""
+        """<a href="(book-Z-H-\d+.html)?(?<path>#footnote_Temp_\d+)">(?<text>\d+)</a>"""
         (handleRef links "Footnote")
 
 let handleFigureRef (links : ResizeArray<Link>) html =
