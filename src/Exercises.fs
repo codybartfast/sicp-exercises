@@ -156,11 +156,14 @@ let handleSymbols text =
     text
     |> rxReplace "``(?<quoted>[^`)<]+)''" (fun m ->  sprintf "\"%s\"" m.Groups.["quoted"].Value)
     |> rxReplace "(&quot;)" (fun m -> "\"")
+    |> rxReplace "(&quot;)" (fun m -> "\"")
+    |> rxReplace "(&middot;)" (fun m -> "·")
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
     |> rxReplace "<sup>3</sup>" (fun m -> "³")
     |> rxReplace "<sup>5</sup>" (fun m -> "⁵")
     |> rxReplace "<sup>a</sup>" (fun m -> "^a")
     |> rxReplace "<sup>b</sup>" (fun m -> "^b")
+    |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
     |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
     |> rxReplace "<u><</u>\s*" (fun m -> "≤")
     |> rxReplace "<u>></u>\s*" (fun m -> "≥")
@@ -226,7 +229,7 @@ let getText html =
             (?<text>[^<]+)        
         </div>\s*</caption><tr><td>\s*</td></tr></table></div>"""
         handleFigure
-    |> rxReplace """<table\ .+?(BOOM|Mary).+?</table>""" handleTable
+    |> rxReplace """<table\ .+?(BOOM|Mary|associated).+?</table>""" handleTable
     |> rxReplace 
         """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0"></div>""" 
         handleImage
