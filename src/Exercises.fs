@@ -74,7 +74,7 @@ let handleExLinks (links : ResizeArray<Link>) html =
 let handleFootnoteRef (links : ResizeArray<Link>) html =
     html
     |> rxReplace
-        """<a href="(?<path>#footnote_Temp_\d+)">(?<text>47)</a>"""
+        """<a href="(?<path>#footnote_Temp_\d+)">(?<text>\d+)</a>"""
         (handleRef links "Footnote")
 
 let handleFigureRef (links : ResizeArray<Link>) html =
@@ -216,17 +216,17 @@ let getText html =
     |> handleSymbols
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
-    |> rxReplace """(?<=\n)([A-Z]|[a-w])([^\r\n]+\r?\n)+""" formatPara
+    |> rxReplace """(?<=\n)([A-Z]|[a-w])(([^\r\n](?!</td>))+\r?\n)+""" formatPara
     |> rxReplace """(?x)
         <a\s*name=[^<]+</a>\s*<div[^<]+<table[^<]+<tr><td><img\s*src=
             "images/(?<filename>ch\d-Z-G-\d+\.gif)"        
         [^<]+<[^<]+<[^<]+<caption[^<]+<div [^<]+<b>Figure\s*
-            (?<id>\d\.\d+)
+            (?<id>\d\.\d+)   
         :</b>\s*        
             (?<text>[^<]+)        
         </div>\s*</caption><tr><td>\s*</td></tr></table></div>"""
         handleFigure
-    |> rxReplace """<table\ .+?BOOM.+?</table>""" handleTable
+    |> rxReplace """<table\ .+?(BOOM|Mary).+?</table>""" handleTable
     |> rxReplace 
         """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0"></div>""" 
         handleImage
