@@ -212,6 +212,7 @@ let handleTable (m : Match) =
 
 let getText html =
     html        
+    |> rxReplace "\.\.\.</tt><tt>\.\.\." (fun m -> sprintf "...%s..." NLNL)
     |> rxRemove "</?(tt|ul)>|" 
     |> rxReplace "&nbsp;" (fun m -> " ")
     |> rxReplace "&lt;" (fun m -> "<")
@@ -225,7 +226,8 @@ let getText html =
     |> handleSymbols
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
-    |> rxReplace """(?<=\n)([A-Z]|[a-w])(([^\r\n](?!</td>))+\r?\n)+""" formatPara
+    |> rxReplace """(?<=\n)([A-Z]|[a-w])(([^\r\n](?!(</td>|</td>)))+\r?\n)+""" formatPara
+    //|> rxReplace """(?<=\n)([A-Z]|[a-w])([^\r\n]+\r?\n)+""" formatPara
     |> rxReplace ("""(?x)
         <a\s*name=[^<]+</a>\s*
         <div[^>]+><table[^>]+><tr><td>
