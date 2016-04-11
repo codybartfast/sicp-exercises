@@ -11,7 +11,6 @@ open Model
 let NL = "\r\n"
 let NLNL = NL + NL
 let lineLength = 72
-let lineLenStr = lineLength.ToString()
 
 let bookUrl path = "http://sicp-book.com/" + path
 
@@ -43,12 +42,12 @@ let getHtml src =
     |> rxRemove """<a name="%_(idx|thm)_\d.\d+"></a>\s*"""
     |> rxRemove """(<p>\s*)*$""" 
 
-let formatPara (m : Match) =
+let formatPara lineLength (m : Match) =
     //">" +
     m.Value
     |> rxReplace "\s*\n" (fun m -> " ")
     |> rxRemove "(?<![.?]) +(?= )" 
-    |> rxReplace ("(?<line>\G.{0," + lineLenStr + "}) +") (fun m->
+    |> rxReplace ("(?<line>\G.{0," + lineLength.ToString() + "}) +") (fun m->
          m.Groups.["line"].Value + NL)    
 
 let handleRef (links : ResizeArray<Link>) prefix (m: Match) =
@@ -80,7 +79,7 @@ let handleFootnoteRef (links : ResizeArray<Link>) html =
 let handleFigureRef (links : ResizeArray<Link>) html =
     html
     |> rxReplace
-        """<a href="(?<path>#%_fig_\d.\d+)">(?<text>\d\.\d+)</a>"""
+        """<a href="(?<path>(book-Z-H-\d+.html)?#%_fig_\d.\d+)">(?<text>\d\.\d+)</a>"""
         (handleRef links "Figure")
 
 let textImage kind filename =
@@ -150,6 +149,7 @@ let handleSymbolImage (m : Match) =
     | "17" -> "→" // \u2192
     | "6"  -> "λ" // \u03BB
     | "19"  -> "∫" // \u222B
+    | "18"  -> "..." // \u22ee
     | _ -> m.Value
 
 let handleFootnotes (links : ResizeArray<Link>) html =
@@ -180,7 +180,7 @@ let handleSymbols text =
     |> rxReplace "<sub>C<sub>0</sub></sub>" (fun m -> "_(C₀)")
     |> rxReplace "<sub>(?<sub>[^<]+)</sub>" handleSubs
     |> rxReplace ("""<img src="images/book-Z-G-D-(?<inum>""" +
-        "11|12|13|20|14|3|9|17|6|19" 
+        "11|12|13|20|14|3|9|17|6|19|18" 
         + """).gif" border="0">""")
         handleSymbolImage
 
@@ -219,7 +219,7 @@ let getText html =
     |> rxReplace "&nbsp;" (fun m -> " ")
     |> rxReplace "&lt;" (fun m -> "<")
     |> rxReplace "&gt;" (fun m -> ">")
-    |> rxReplace "<li>" (fun m -> "* ")
+    |> rxReplace "<li>" (fun m -> NLNL + "* ")
     |> rxReplace """^<b>(?<title>.*?)\.</b>\s*""" (fun m ->
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
@@ -228,7 +228,11 @@ let getText html =
     |> handleSymbols
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
-    |> rxReplace """(?<=\n)([A-Z]|[a-w])(([^\r\n](?!(</td>|</td>)))+\r?\n)+""" formatPara
+    |> rxReplace """<blockquote>(?<quoted>.*?)</blockquote>\s*""" (fun m -> 
+        m.Groups.["quoted"].Value
+        |> rxReplace """(?<=\n)([a-wA-Z*])([^\r\n]+\r?\n)+""" (formatPara (lineLength - 4))
+        |> rxReplace @"(?<=\n)" (fun m -> "I❤F#")
+        |> (fun text -> NLNL + text + NLNL))|> rxReplace """(?<=\n)([A-Z]|[a-w])(([^\r\n]{10,}(?!(</td>)))+\r?\n)+""" (formatPara lineLength)
     |> rxReplace ("""(?x)
         <a\s*name=[^<]+</a>\s*
         <div[^>]+><table[^>]+><tr><td>
@@ -245,7 +249,8 @@ let getText html =
         """(</div>\s+)?(<div\s+align=left>)?<img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0">(</div>)?""" 
         handleImage
     |> rxReplace """(\r?\n)( *\r?\n){1,}""" (fun m -> NL + NL)
-    |> rxReplace "[\r\n]*$" (fun m -> NL)
+    |> rxReplace @"[\r\n]*$" (fun m -> NL)
+    |> rxReplace @"I❤F#" (fun m -> "    ")
 
 
 let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) = 
