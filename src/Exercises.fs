@@ -192,10 +192,11 @@ let handleTable (m : Match) =
         | _ -> []
     let rowStrings = 
         m.Value
+        |> rxReplace "<tr><td valign=top ></td></tr>" (fun m -> "")
         |> rxList "(?<=<tr>).*?(?=</tr>)"
     let rows =
         rowStrings
-        |> List.map (rxList @"(?<=<td[^>]+>\s*)[^<]+?(?=\s*</td>)")
+        |> List.map (rxList @"(?<=<td[^>]+>\s*)[^<]*?(?=\s*</td>)")
     let cols = transpose rows
     let cellLengths = 
         cols
@@ -232,7 +233,8 @@ let getText html =
         m.Groups.["quoted"].Value
         |> rxReplace """(?<=\n)([a-wA-Z*])([^\r\n]+\r?\n)+""" (formatPara (lineLength - 4))
         |> rxReplace @"(?<=\n)" (fun m -> "I❤F#")
-        |> (fun text -> NLNL + text + NLNL))|> rxReplace """(?<=\n)([A-Z]|[a-w])(([^\r\n]{10,}(?!(</td>)))+\r?\n)+""" (formatPara lineLength)
+        |> (fun text -> NLNL + text + NLNL))
+    |> rxReplace """(?<=\n)([A-Za-w]\w+\s([^\r\n](?!(</td>|\s;))){10,})(([^\r\n](?!(</td>|\s;)))+\r?\n)+""" (formatPara lineLength)
     |> rxReplace ("""(?x)
         <a\s*name=[^<]+</a>\s*
         <div[^>]+><table[^>]+><tr><td>
@@ -244,7 +246,7 @@ let getText html =
             (?<text>[^<]+)        
         </div>\s*</caption><tr><td>\s*</td></tr></table></div>""")
         handleFigure
-    |> rxReplace """<table\ .+?(BOOM|Mary|associated).+?</table>""" handleTable
+    |> rxReplace """<table\ .+?.+?</table>""" handleTable
     |> rxReplace 
         """(</div>\s+)?(<div\s+align=left>)?<img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0">(</div>)?""" 
         handleImage
