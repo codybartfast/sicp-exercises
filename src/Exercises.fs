@@ -97,11 +97,16 @@ let handleFigure (m : Match) =
     let filename = m.Groups.["filename"].Value
     let id = m.Groups.["id"].Value
     let text = m.Groups.["text"].Value
-    NLNL + 
-        textImage "Figure" filename
+    NLNL  
+        //textImage "Figure" filename
+        + "Figure:" + NLNL
+        + m.Groups.["content"].Value
         + NLNL
         + sprintf "Figure %s  %s" id text
-        + NLNL
+//        + NLNL
+//        + "[[[[" + m.Value + "]]]]"
+//        + NLNL
+//        + "{{{{" + m.Groups.["wild"].Value + "}}}}"
 
 let sup (text : string) =
     let supChar c =
@@ -144,6 +149,7 @@ let handleSymbolImage (m : Match) =
     | "9"  -> "π"
     | "17" -> "→" // \u2192
     | "6"  -> "λ" // \u03BB
+    | "19"  -> "∫" // \u222B
     | _ -> m.Value
 
 let handleFootnotes (links : ResizeArray<Link>) html =
@@ -164,7 +170,7 @@ let handleSymbols text =
     |> rxReplace "<sup>a</sup>" (fun m -> "^a")
     |> rxReplace "<sup>b</sup>" (fun m -> "^b")
     |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
-    |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
+    |> rxReplace "<sub>0</sub><sup>t</sup>" (fun m -> "_(0)^t ")
     |> rxReplace "<u><</u>\s*" (fun m -> "≤")
     |> rxReplace "<u>></u>\s*" (fun m -> "≥")
     |> rxReplace "<sup>x</sup>" (fun m -> "^x")
@@ -172,7 +178,7 @@ let handleSymbols text =
     |> rxReplace "<sup>n-1</sup>" (fun m -> "ⁿ⁻¹")
     |> rxReplace "<sub>(?<sub>[^<]+)</sub>" handleSubs
     |> rxReplace ("""<img src="images/book-Z-G-D-(?<inum>""" +
-        "11|12|13|20|14|3|9|17|6" 
+        "11|12|13|20|14|3|9|17|6|19" 
         + """).gif" border="0">""")
         handleSymbolImage
 
@@ -220,18 +226,22 @@ let getText html =
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
     |> rxReplace """(?<=\n)([A-Z]|[a-w])(([^\r\n](?!</td>))+\r?\n)+""" formatPara
-    |> rxReplace """(?x)
-        <a\s*name=[^<]+</a>\s*<div[^<]+<table[^<]+<tr><td><img\s*src=
-            "images/(?<filename>ch\d-Z-G-\d+\.gif)"        
-        [^<]+<[^<]+<[^<]+<caption[^<]+<div [^<]+<b>Figure\s*
+    |> rxReplace ("""(?x)
+        <a\s*name=[^<]+</a>\s*
+        <div[^>]+><table[^>]+><tr><td>
+        \s*<div[^>]+>
+
+        (?<content>.*?)
+
+        </td></tr><caption[^<]+<div [^<]+<b>Figure\s*
             (?<id>\d\.\d+)   
         :</b>\s*        
             (?<text>[^<]+)        
-        </div>\s*</caption><tr><td>\s*</td></tr></table></div>"""
+        </div>\s*</caption><tr><td>\s*</td></tr></table></div>""")
         handleFigure
     |> rxReplace """<table\ .+?(BOOM|Mary|associated).+?</table>""" handleTable
     |> rxReplace 
-        """<div\s+align=left><img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0"></div>""" 
+        """(</div>\s+)?(<div\s+align=left>)?<img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0">(</div>)?""" 
         handleImage
     |> rxReplace """(\r?\n)( *\r?\n){1,}""" (fun m -> NL + NL)
     |> rxReplace "[\r\n]*$" (fun m -> NL)
