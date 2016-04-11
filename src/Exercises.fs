@@ -122,7 +122,7 @@ let sup (text : string) =
         | '7' -> '⁷'
         | '8' -> '⁸'
         | '9' -> '⁹'
-        | ']' -> '⁾'
+        | ']' -> '⁾' 
         | c -> c
     text.ToCharArray()
         |> Array.map supChar
@@ -170,12 +170,14 @@ let handleSymbols text =
     |> rxReplace "<sup>a</sup>" (fun m -> "^a")
     |> rxReplace "<sup>b</sup>" (fun m -> "^b")
     |> rxReplace "<sup>n</sup>" (fun m -> "ⁿ")
-    |> rxReplace "<sub>0</sub><sup>t</sup>" (fun m -> "_(0)^t ")
-    |> rxReplace "<u><</u>\s*" (fun m -> "≤")
-    |> rxReplace "<u>></u>\s*" (fun m -> "≥")
     |> rxReplace "<sup>x</sup>" (fun m -> "^x")
     |> rxReplace "<sup>n/2</sup>" (fun m -> "^(n/2)")
     |> rxReplace "<sup>n-1</sup>" (fun m -> "ⁿ⁻¹")
+    |> rxReplace "<u><</u>\s*" (fun m -> "≤")
+    |> rxReplace "<u>></u>\s*" (fun m -> "≥")
+    |> rxReplace "<sub>0</sub><sup>t</sup>" (fun m -> "_(0)^t ")
+    |> rxReplace "<sub>L<sub>0</sub></sub>" (fun m -> "_(L₀)")
+    |> rxReplace "<sub>C<sub>0</sub></sub>" (fun m -> "_(C₀)")
     |> rxReplace "<sub>(?<sub>[^<]+)</sub>" handleSubs
     |> rxReplace ("""<img src="images/book-Z-G-D-(?<inum>""" +
         "11|12|13|20|14|3|9|17|6|19" 
@@ -227,14 +229,11 @@ let getText html =
     |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
     |> rxReplace """(?<=\n)([A-Z]|[a-w])(([^\r\n](?!(</td>|</td>)))+\r?\n)+""" formatPara
-    //|> rxReplace """(?<=\n)([A-Z]|[a-w])([^\r\n]+\r?\n)+""" formatPara
     |> rxReplace ("""(?x)
         <a\s*name=[^<]+</a>\s*
         <div[^>]+><table[^>]+><tr><td>
-        \s*<div[^>]+>
-
+        \s*(<div[^>]+>)?
         (?<content>.*?)
-
         </td></tr><caption[^<]+<div [^<]+<b>Figure\s*
             (?<id>\d\.\d+)   
         :</b>\s*        
