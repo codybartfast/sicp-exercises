@@ -75,18 +75,20 @@ let matter place =
         Prose = prose;
         Html = Html place.String }
 
-let block (m : Match) = 
+let block title textId (m : Match) = 
     let str = m.Value
     match m.Groups.["exercise"].Success with
     | false -> Block.Prose (Prose (Html str))
     | true -> Block.Exercise {
         ExerciseSrc.Id = Id m.Groups.["id"].Value
         Html = Html m.Value
+        TextTitle = title
+        TextId = textId
     }
 
-let blocks (m : Match) =
+let blocks title textId (m : Match) =
     matches blockRx (m.Value) 0 
-    |> List.map block
+    |> List.map (block title textId)
 
 let chapter place =
     let id, title, place = title place
@@ -102,7 +104,7 @@ let chapter place =
     
 let subsection (m : Match) =
     let id, title, place = title {String = m.Value; Index = 0; }
-    let blocks = blocks m
+    let blocks = blocks title.Value id.Value m
     {
         Subsection.Id = id.Value;
         Title = title.Value;
@@ -118,7 +120,7 @@ let section place =
     let id, title, place = title place
 
     let text = proseRx.Match(place.String, place.Index)
-    let blocks = blocks (text)
+    let blocks = blocks title.Value id.Value (text)
     let prose, ex =
         match blocks with 
         | [Block.Prose pr] -> pr, None

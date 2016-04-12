@@ -54,6 +54,7 @@
     <Compile Include="Regex.fs" />
     <Compile Include="Model.fs" />
     <Compile Include="Files.fs" />
+    <Compile Include="PaperPage.fs" />
     <Compile Include="Exercises.fs" />
     <Compile Include="Outline.fs" />
     <Compile Include="Program.fs" />

@@ -7,6 +7,7 @@ open System.Text.RegularExpressions
 
 open Common
 open Model
+open PaperPage
 
 let NL = "\r\n"
 let NLNL = NL + NL
@@ -22,6 +23,8 @@ type Exercise = {
     UrlPath: string
     Id: string
     Html: string
+    TextTitle: string
+    TextId: string
     Text: string
     Links: Link list
 }
@@ -43,12 +46,12 @@ let getHtml src =
     |> rxRemove """(<p>\s*)*$""" 
 
 let formatPara lineLength (m : Match) =
-    //">" +
     m.Value
     |> rxReplace "\s*\n" (fun m -> " ")
     |> rxRemove "(?<![.?]) +(?= )" 
     |> rxReplace ("(?<line>\G.{0," + lineLength.ToString() + "}) +") (fun m->
-         m.Groups.["line"].Value + NL)    
+         "" + m.Groups.["line"].Value + NL)    
+    |> fun t -> NLNL + t
 
 let handleRef (links : ResizeArray<Link>) prefix (m: Match) =
     let urlPath = m.Groups.["path"].Value
@@ -97,15 +100,10 @@ let handleFigure (m : Match) =
     let id = m.Groups.["id"].Value
     let text = m.Groups.["text"].Value
     NLNL  
-        //textImage "Figure" filename
         + "Figure:" + NLNL
         + m.Groups.["content"].Value
         + NLNL
         + sprintf "Figure %s  %s" id text
-//        + NLNL
-//        + "[[[[" + m.Value + "]]]]"
-//        + NLNL
-//        + "{{{{" + m.Groups.["wild"].Value + "}}}}"
 
 let sup (text : string) =
     let supChar c =
@@ -127,7 +125,6 @@ let sup (text : string) =
         |> Array.map supChar
         |> String   
 
-// ₁ \u2081 ₂ \u2082
 let handleSubs (m : Match) =
     match m.Groups.["sub"].Value with
     | "1" -> "₁"  // \u2081
@@ -143,12 +140,12 @@ let handleSymbolImage (m : Match) =
     | "12" -> "ψ"
     | "13" -> "√"
     | "20" -> "≈" 
-    | "14" -> "←" // \u2190
+    | "14" -> "←"    // \u2190
     | "3"  -> "θ"
     | "9"  -> "π"
-    | "17" -> "→" // \u2192
-    | "6"  -> "λ" // \u03BB
-    | "19"  -> "∫" // \u222B
+    | "17" -> "→"    // \u2192
+    | "6"  -> "λ"    // \u03BB
+    | "19"  -> "∫"   // \u222B
     | "18"  -> "..." // \u22ee
     | _ -> m.Value
 
@@ -160,7 +157,7 @@ let handleFootnotes (links : ResizeArray<Link>) html =
 
 let handleSymbols text = 
     text
-    |> rxReplace "``(?<quoted>[^`)<]+)''" (fun m ->  sprintf "\"%s\"" m.Groups.["quoted"].Value)
+    //|> rxReplace "``(?<quoted>[^`)<]+)''" (fun m ->  sprintf "\"%s\"" m.Groups.["quoted"].Value) // 1.26
     |> rxReplace "(&quot;)" (fun m -> "\"")
     |> rxReplace "(&quot;)" (fun m -> "\"")
     |> rxReplace "(&middot;)" (fun m -> "·")
@@ -173,8 +170,8 @@ let handleSymbols text =
     |> rxReplace "<sup>x</sup>" (fun m -> "^x")
     |> rxReplace "<sup>n/2</sup>" (fun m -> "^(n/2)")
     |> rxReplace "<sup>n-1</sup>" (fun m -> "ⁿ⁻¹")
-    |> rxReplace "<u><</u>\s*" (fun m -> "≤")
-    |> rxReplace "<u>></u>\s*" (fun m -> "≥")
+    |> rxReplace "<u><</u> *" (fun m -> "≤")
+    |> rxReplace "<u>></u> *" (fun m -> "≥")
     |> rxReplace "<sub>0</sub><sup>t</sup>" (fun m -> "_(0)^t ")
     |> rxReplace "<sub>L<sub>0</sub></sub>" (fun m -> "_(L₀)")
     |> rxReplace "<sub>C<sub>0</sub></sub>" (fun m -> "_(C₀)")
@@ -216,30 +213,37 @@ let handleTable (m : Match) =
 let getText html =
     html        
     |> rxReplace "\.\.\.</tt><tt>\.\.\." (fun m -> sprintf "...%s..." NLNL)
-    |> rxRemove "</?(tt|ul)>|" 
+    |> rxReplace "``(?<quoted>(?!'')[^`]+?)''" (fun m ->  sprintf "\"%s\"" m.Groups.["quoted"].Value) // 1.26
+    |> rxRemove "</?tt>" 
     |> rxReplace "&nbsp;" (fun m -> " ")
     |> rxReplace "&lt;" (fun m -> "<")
     |> rxReplace "&gt;" (fun m -> ">")
+    |> rxReplace "</?ul>" (fun m -> NLNL)
     |> rxReplace "<li>" (fun m -> NLNL + "* ")
-    |> rxReplace """^<b>(?<title>.*?)\.</b>\s*""" (fun m ->
+    |> rxReplace """^<b>(?<title>.*?)\.</b> *""" (fun m ->
         let title = m.Groups.["title"].Value
         let underline = new String('=', title.Length)
         title + NL + underline + NL + NL)
     |> rxReplace "<i>|</i>|<em>|</em>|<strong>|</strong>" (fun m -> "") 
     |> handleSymbols
-    |> rxReplace """\s*(<p>|<br>)(\r?\n)?""" (fun m -> NL)
+    |> rxReplace """(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
-    |> rxReplace """<blockquote>(?<quoted>.*?)</blockquote>\s*""" (fun m -> 
+
+    |> rxReplace """</blockquote>""" (fun m -> """</blockquote>""" + NLNL)
+
+
+    |> rxReplace       """(?<=\n)([A-Za-w"*](\. +)?([^\r\n](?!(</td>|\s;|;;))){8,})(([^\r\n](?!(</td>|\s;|;;)))+\r?\n)+""" (formatPara lineLength)
+
+    |> rxReplace """<blockquote>(?<quoted>.*?)</blockquote>""" (fun m -> 
         m.Groups.["quoted"].Value
-        |> rxReplace """(?<=\n)([a-wA-Z*])([^\r\n]+\r?\n)+""" (formatPara (lineLength - 4))
+        //|> rxReplace """[A-Z][\w ]+\?""" (fun m-> NLNL + m.Value)
+        |> rxReplace "What in fact.+?the" (fun m -> NLNL + "What in fact the")
+        |> rxReplace """(?<=\n)([A-Za-w"*](\.\s+)?([^\r\n](?!(</td>|\s;))){10,})(([^\r\n](?!(</td>|\s;)))+\r?\n)+""" (formatPara (lineLength - 8))
         |> rxReplace @"(?<=\n)" (fun m -> "I❤F#")
         |> (fun text -> NLNL + text + NLNL))
-    |> rxReplace """(?<=\n)([A-Za-w]\w+\s([^\r\n](?!(</td>|\s;))){10,})(([^\r\n](?!(</td>|\s;)))+\r?\n)+""" (formatPara lineLength)
-    |> rxReplace ("""(?x)
-        <a\s*name=[^<]+</a>\s*
-        <div[^>]+><table[^>]+><tr><td>
-        \s*(<div[^>]+>)?
-        (?<content>.*?)
+
+    |> rxReplace ("""(?x) <a\s*name=[^<]+</a>\s* <div[^>]+><table[^>]+><tr><td> \s*(<div[^>]+>)?
+            (?<content>.*?)
         </td></tr><caption[^<]+<div [^<]+<b>Figure\s*
             (?<id>\d\.\d+)   
         :</b>\s*        
@@ -250,9 +254,11 @@ let getText html =
     |> rxReplace 
         """(</div>\s+)?(<div\s+align=left>)?<img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0">(</div>)?""" 
         handleImage
-    |> rxReplace """(\r?\n)( *\r?\n){1,}""" (fun m -> NL + NL)
-    |> rxReplace @"[\r\n]*$" (fun m -> NL)
     |> rxReplace @"I❤F#" (fun m -> "    ")
+    |> rxReplace """(\r?\n)( *\r?\n){1,}""" (fun m -> NL + NL)
+//    |> rxReplace @"[\r\n]*$" (fun m -> NL)
+//    |> rxReplace @"^[\r\n]*" (fun m -> NL)
+    |> (fun t -> t.Trim() + NLNL)
 
 
 let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) = 
@@ -285,9 +291,12 @@ let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) =
         File = file
         UrlPath = exLink.Path
         Id = strId exSrc.Id
-        Html = html
+        Html = html    
+        TextTitle = strTitle exSrc.TextTitle  
+        TextId = strId exSrc.TextId
         Text = getText text
-        Links =  links |> Seq.toList }
+        Links =  links |> Seq.toList 
+        }
     exercise
 
 let exercisesFromSubsection file sub  =
@@ -311,7 +320,7 @@ let exercisesFromFile file =
 
 let allExercises files = files |> Seq.collect exercisesFromFile
 
-let withMatter ex =
+let present ex =
     let double = String ('=', lineLength)
     let single = String ('-', lineLength)
 
@@ -320,32 +329,37 @@ let withMatter ex =
         |> List.map (fun link ->
             ("[" + link.Text + "]: ").PadRight(17) + bookUrl link.Path + NL)
             
-    let commented = 
-        List.concat [
-            [
-                double; NL; NL;
-                ex.Text;
-                single; NL;
-            ];
-            linkLines;
-            [single];
-        ]
-        |> String.Concat
-        |> fun text -> Regex.Replace(text, "^",  ";   ", RegexOptions.Multiline)    
-    let uncommented =  
+    List.concat [
+        [
+            double; NL; NL;
+            ex.Text;
+            single; NL;
+        ];
+        linkLines
+        [ex.TextTitle;  " - page "; pageNumber ex.Id; NL];
+        [single];
+    ]
+    |> String.Concat
+
+
+let jFormat ex =
+   let commented = Regex.Replace(present ex, "^",  ";   ", RegexOptions.Multiline)    
+   let uncommented =  
         [
             NL; NL;
-            sprintf """(output "%s")""" ex.Id;
-            NL; NL; NL;
-            "(end)";   
+            sprintf """(-start- "%s")""" ex.Id;
+            NL; NL; NL; NL;
+            sprintf """( -end- "%s")""" ex.Id;
         ]        
         |> String.Concat
-    commented + uncommented
+   commented + uncommented
 
-let write (ex : Exercise) =
+let write format (ex : Exercise) =    
     let dir = exerciseRoot
     let path = Path.Combine(dir, strId ex.Source.Id + ".txt")
-    File.WriteAllText( path, withMatter ex, Encoding.UTF8)
+    let content = format ex
+    File.WriteAllText(path, content, Encoding.UTF8)
+    content
 
 let desc ex =
-    printfn "%s" (withMatter ex)
+    printfn "%s" ex

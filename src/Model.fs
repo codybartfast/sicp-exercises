@@ -17,7 +17,7 @@ and Block =
     | Prose of Prose
     | Exercise of ExerciseSrc
 and Prose = Prose of Html
-and ExerciseSrc = { Id: Id; Html: Html }
+and ExerciseSrc = { Id: Id; Html: Html; TextTitle: Title; TextId: Id }
 and Html = Html of string
 and Id = Id of string
 and Title = Title of string

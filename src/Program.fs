@@ -23,12 +23,13 @@ let main argv =
         |> allExercises 
         |> List.ofSeq
 
-    exercises 
-        |> List.iter write
+    let strings =
+        exercises 
+        |> List.map (write jFormat)
     
     let xx = 
-        exercises 
-        |> List.skip 337
+        strings 
+        |> List.skip 349
         
     xx |> Seq.iter (fun x ->
         Console.Clear ()
