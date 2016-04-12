@@ -25,11 +25,11 @@ let main argv =
 
     let strings =
         exercises 
-        |> List.map (write jFormat)
+        |> List.map (write present)
     
     let xx = 
         strings 
-        |> List.skip 349
+        |> List.skip (46 + 97 + 82 + 79)
         
     xx |> Seq.iter (fun x ->
         Console.Clear ()

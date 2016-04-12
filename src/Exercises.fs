@@ -170,8 +170,8 @@ let handleSymbols text =
     |> rxReplace "<sup>x</sup>" (fun m -> "^x")
     |> rxReplace "<sup>n/2</sup>" (fun m -> "^(n/2)")
     |> rxReplace "<sup>n-1</sup>" (fun m -> "ⁿ⁻¹")
-    |> rxReplace "<u><</u> *" (fun m -> "≤")
-    |> rxReplace "<u>></u> *" (fun m -> "≥")
+    |> rxReplace "<u><</u>" (fun m -> "≤")
+    |> rxReplace "<u>></u>" (fun m -> "≥")
     |> rxReplace "<sub>0</sub><sup>t</sup>" (fun m -> "_(0)^t ")
     |> rxReplace "<sub>L<sub>0</sub></sub>" (fun m -> "_(L₀)")
     |> rxReplace "<sub>C<sub>0</sub></sub>" (fun m -> "_(C₀)")
@@ -232,7 +232,7 @@ let getText html =
     |> rxReplace """</blockquote>""" (fun m -> """</blockquote>""" + NLNL)
 
 
-    |> rxReplace       """(?<=\n)([A-Za-w"*](\. +)?([^\r\n](?!(</td>|\s;|;;))){8,})(([^\r\n](?!(</td>|\s;|;;)))+\r?\n)+""" (formatPara lineLength)
+    |> rxReplace       """(?<=\n)(([A-Za-w"*]|\(Q)(\. +)?([^\r\n](?!(</td>|\s;|;;))){8,})(([^\r\n](?!(</td>|\s;|;;)))+\r?\n)+""" (formatPara lineLength)
 
     |> rxReplace """<blockquote>(?<quoted>.*?)</blockquote>""" (fun m -> 
         m.Groups.["quoted"].Value
@@ -336,7 +336,7 @@ let present ex =
             single; NL;
         ];
         linkLines
-        [ex.TextTitle;  " - page "; pageNumber ex.Id; NL];
+        [ex.TextId; " "; ex.TextTitle; " - p"; pageNumber ex.Id; NL];
         [single];
     ]
     |> String.Concat
@@ -349,7 +349,7 @@ let jFormat ex =
             NL; NL;
             sprintf """(-start- "%s")""" ex.Id;
             NL; NL; NL; NL;
-            sprintf """( -end- "%s")""" ex.Id;
+            sprintf """(--end-- "%s")""" ex.Id;
         ]        
         |> String.Concat
    commented + uncommented
