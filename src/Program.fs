@@ -23,17 +23,20 @@ let main argv =
         |> allExercises 
         |> List.ofSeq
 
-    let strings =
-        exercises 
-        |> List.map (write present)
+//    let sparse =
+//        exercises 
+//        |> List.map (fun x -> x.Text)
     
+    exercises |> List.iter write
+
+
     let xx = 
-        strings 
+        exercises 
         |> List.skip 0//(46 + 97 + 82 + 79 + 46)
         
     xx |> Seq.iter (fun x ->
         Console.Clear ()
-        desc x
+        desc x.Text
         Console.ReadKey () |> ignore )
     
     printfn "%s" "Done."

@@ -232,7 +232,7 @@ let getText html =
     |> rxReplace """</blockquote>""" (fun m -> """</blockquote>""" + NLNL)
 
 
-    |> rxReplace       """(?<=\n)(?!(compiled|primitive)-|after-|read-eval)(([A-Za-w"*]|\(Q)(\. +)?([^\r\n](?!(</td>|\s;))){8,})(([^\r\n](?!(</td>|\s;)))+\r?\n)+""" (formatPara lineLength)
+    |> rxReplace """(?<=\n)(?!(compiled|primitive)-|after-|read-eval)(([A-Za-w"*]|\(Q)(\. +)?([^\r\n](?!(</td>|\s;))){8,})(([^\r\n](?!(</td>|\s;)))+\r?\n)+""" (formatPara lineLength)
 
     |> rxReplace """<blockquote>(?<quoted>.*?)</blockquote>""" (fun m -> 
         m.Groups.["quoted"].Value
@@ -260,6 +260,29 @@ let getText html =
 //    |> rxReplace @"^[\r\n]*" (fun m -> NL)
     |> (fun t -> t.Trim() + NLNL)
 
+
+let topAndTail ex =
+    let double = String ('=', lineLength)
+    let single = String ('-', lineLength)
+
+    let linkLines = 
+        ex.Links
+        |> List.map (fun link ->
+            ("[" + link.Text + "]: ").PadRight(17) + bookUrl link.Path + NL)
+
+    let tat =         
+        List.concat [
+            [
+                //double; NL; NL;
+                ex.Text;
+                single; NL;
+            ];
+            linkLines
+            [ex.TextId; " "; ex.TextTitle; " - p"; pageNumber ex.Id; NL];
+            [single];
+        ]
+        |> String.Concat
+    {ex with Text = tat}
 
 let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) = 
     let addFile ref = (strId file.Id) + ref
@@ -297,7 +320,7 @@ let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) =
         Text = getText text
         Links =  links |> Seq.toList 
         }
-    exercise
+    topAndTail exercise
 
 let exercisesFromSubsection file sub  =
         sub.Blocks
@@ -320,46 +343,27 @@ let exercisesFromFile file =
 
 let allExercises files = files |> Seq.collect exercisesFromFile
 
-let present ex =
-    let double = String ('=', lineLength)
-    let single = String ('-', lineLength)
 
-    let linkLines = 
-        ex.Links
-        |> List.map (fun link ->
-            ("[" + link.Text + "]: ").PadRight(17) + bookUrl link.Path + NL)
-            
-    List.concat [
-        [
-            double; NL; NL;
-            ex.Text;
-            single; NL;
-        ];
-        linkLines
-        [ex.TextId; " "; ex.TextTitle; " - p"; pageNumber ex.Id; NL];
-        [single];
-    ]
-    |> String.Concat
+//let jFormat ex =
+//   let commented = Regex.Replace(present ex, "^",  ";   ", RegexOptions.Multiline)    
+//   let uncommented =  
+//        [
+//            NL; NL;
+//            sprintf """(-start- "%s")""" ex.Id;
+//            NL; NL; NL; NL;
+//            sprintf """(--end-- "%s")""" ex.Id;
+//        ]        
+//        |> String.Concat
+//   "#lang racket" + NL + NL + commented + uncommented
 
-
-let jFormat ex =
-   let commented = Regex.Replace(present ex, "^",  ";   ", RegexOptions.Multiline)    
-   let uncommented =  
-        [
-            NL; NL;
-            sprintf """(-start- "%s")""" ex.Id;
-            NL; NL; NL; NL;
-            sprintf """(--end-- "%s")""" ex.Id;
-        ]        
-        |> String.Concat
-   commented + uncommented
-
-let write format (ex : Exercise) =    
+let write (ex : Exercise) =    
     let dir = exerciseRoot
-    let path = Path.Combine(dir, strId ex.Source.Id + ".txt")
-    let content = format ex
-    File.WriteAllText(path, content, Encoding.UTF8)
-    content
+    let exNo = Regex.Replace(ex.Id, "\.\d$", (fun m -> ".0" + m.Value))
+    let filename = exNo + ".rkt"
+    let path = Path.Combine(dir, filename)
+    //let content = format ex
+    File.WriteAllText(path, ex.Text)//, Encoding.UTF8)
+    //content
 
 let desc ex =
     printfn "%s" ex
