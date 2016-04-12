@@ -23,9 +23,11 @@ let projectRoot =
     getDirectory absPath ""
     
 let exerciseRoot = getDirectory projectRoot "exercises"
-
 let exerciseImages = getDirectory exerciseRoot "images"
 
+let exMinimum = getDirectory exerciseRoot "minimum"
+let exStandard = getDirectory exerciseRoot "standard"
+let exStyleB = getDirectory exerciseRoot "styleB"
+let exStyleJ = getDirectory exerciseRoot "styleJ"
+let exStyleJSect = getDirectory exerciseRoot "styleJSect"
 
-
-    

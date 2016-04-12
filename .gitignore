@@ -1,6 +1,6 @@
 # Book:
-!/exercices
-/exercises/*
+#!/exercices
+#/exercises/*
 !/exercises/images
 
 # Windows image file caches

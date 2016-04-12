@@ -1,1 +1,3 @@
-sin x = 3 sin(x/3) - 4 sin³(x/3)
+              x           x
+sin x = 3 sin ─  ─ 4 sin³ ─
+              3           3

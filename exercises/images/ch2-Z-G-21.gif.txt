@@ -1,12 +1,10 @@
+(dot-product v w)       returns the sum ∑ᵢ vᵢwᵢ
 
-(dot-product v w)     
-returns the sum ∑ᵢ vᵢwᵢ
+(matrix-*-vector m v)   returns the vector t, where t  = ∑ m  v
+                                                     i    J ij j
+ 
+(matrix-*-matrix m n)   returns the matrix p, where p  = ∑ m  n
+                                                     ij   k ik kj
 
-(matrix-*-vector m v) 
-returns the vector t, where t_(i) = ∑ m_(ij).v_(j)
-                                    J
-(matrix-*-matrix m n) 
-returns the matrix p, where p_(ij) = ∑ m_(ik).n_(kj)
-                                     k
-(transpose m)         
-returns the matrix n, where n_(ij) = m_(ji)
+(transpose m)           returns the matrix n, where n   = m
+                                                     ij    ji

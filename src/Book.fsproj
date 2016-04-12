@@ -57,6 +57,7 @@
     <Compile Include="PaperPage.fs" />
     <Compile Include="Exercises.fs" />
     <Compile Include="Outline.fs" />
+    <Compile Include="Publish.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <PropertyGroup>

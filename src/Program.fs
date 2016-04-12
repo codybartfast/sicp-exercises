@@ -4,41 +4,29 @@ open System.Text
 open Exercises
 open Outline
 open Model
+open Publish
 
-
-// http://www.fileformat.info/info/unicode/char/b2/browsertest.htm
-// http://www.sunilpatel.co.uk/wp-content/uploads/2010/08/Lowercase-Greek-Symbols.jpg
-// http://symbolcodes.tlt.psu.edu/bylanguage/mathchart.html
+let displayConsole skip exercises =
+    let display ex =
+        Console.Clear()
+        printfn "%s" ex.ExStandard
+        Console.ReadKey () |> ignore
+    exercises
+        |> List.skip skip
+        |> List.iter display
 
 [<EntryPoint>]
-let main argv =
-    let files = Files.files ()
-    
-//    files
-//    |> Seq.collect outline
-//    |> Seq.iter (printfn "%s")
-
-    let exercises = 
-        files 
+let main argv =    
+    let exercises =
+        Files.files ()
         |> allExercises 
         |> List.ofSeq
 
-//    let sparse =
-//        exercises 
-//        |> List.map (fun x -> x.Text)
+    exercises 
+        |> publish
     
-    exercises |> List.iter write
-
-
-    let xx = 
-        exercises 
-        |> List.skip 0//(46 + 97 + 82 + 79 + 46)
-        
-    xx |> Seq.iter (fun x ->
-        Console.Clear ()
-        desc x.Text
-        Console.ReadKey () |> ignore )
+    exercises
+        |> displayConsole (46 + 97 + 77) //82 + 79 + 46)        
     
     printfn "%s" "Done."
-    Console.ReadKey() |> ignore
     0

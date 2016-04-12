@@ -12,6 +12,9 @@ open PaperPage
 let NL = "\r\n"
 let NLNL = NL + NL
 let lineLength = 72
+let doubleLine = String ('=', lineLength)
+let singleLine = String ('-', lineLength)
+let commentPrefix = ";   "
 
 let bookUrl path = "http://sicp-book.com/" + path
 
@@ -25,8 +28,9 @@ type Exercise = {
     Html: string
     TextTitle: string
     TextId: string
-    Text: string
     Links: Link list
+    ExMinimum: string
+    ExStandard: string
 }
 
 let rxReplace pattern (eval : Match -> string) string = Regex.Replace(string, pattern, eval, RegexOptions.Singleline)
@@ -103,7 +107,7 @@ let handleFigure (m : Match) =
         + "Figure:" + NLNL
         + m.Groups.["content"].Value
         + NLNL
-        + sprintf "Figure %s  %s" id text
+        + sprintf "Figure %s:  %s" id text
 
 let sup (text : string) =
     let supChar c =
@@ -229,9 +233,17 @@ let getText html =
     |> rxReplace """(<p>|<br>)(\r?\n)?""" (fun m -> NL)
     |> rxReplace """(?<=</div>)|(?=\<div)""" (fun m -> NLNL)
 
+    |> rxReplace ("""(?x) <a\s*name=[^<]+</a>\s* <div[^>]+><table[^>]+><tr><td> \s*(<div[^>]+>)?
+            (?<content>.*?)
+        </td></tr><caption[^<]+<div [^<]+<b>Figure\s*
+            (?<id>\d\.\d+)   
+        :</b>\s*        
+            (?<text>[^<]+)        
+        </div>\s*</caption><tr><td>\s*</td></tr></table></div>""")
+        handleFigure
+
+
     |> rxReplace """</blockquote>""" (fun m -> """</blockquote>""" + NLNL)
-
-
     |> rxReplace """(?<=\n)(?!(compiled|primitive)-|after-|read-eval)(([A-Za-w"*]|\(Q)(\. +)?([^\r\n](?!(</td>|\s;))){8,})(([^\r\n](?!(</td>|\s;)))+\r?\n)+""" (formatPara lineLength)
 
     |> rxReplace """<blockquote>(?<quoted>.*?)</blockquote>""" (fun m -> 
@@ -242,47 +254,37 @@ let getText html =
         |> rxReplace @"(?<=\n)" (fun m -> "I❤F#")
         |> (fun text -> NLNL + text + NLNL))
 
-    |> rxReplace ("""(?x) <a\s*name=[^<]+</a>\s* <div[^>]+><table[^>]+><tr><td> \s*(<div[^>]+>)?
-            (?<content>.*?)
-        </td></tr><caption[^<]+<div [^<]+<b>Figure\s*
-            (?<id>\d\.\d+)   
-        :</b>\s*        
-            (?<text>[^<]+)        
-        </div>\s*</caption><tr><td>\s*</td></tr></table></div>""")
-        handleFigure
     |> rxReplace """<table\ .+?.+?</table>""" handleTable
     |> rxReplace 
         """(</div>\s+)?(<div\s+align=left>)?<img\s+src="images/(?<filename>ch\d-Z-G-\d+.gif)"\s+border="0">(</div>)?""" 
         handleImage
     |> rxReplace @"I❤F#" (fun m -> "    ")
     |> rxReplace """(\r?\n)( *\r?\n){1,}""" (fun m -> NL + NL)
-//    |> rxReplace @"[\r\n]*$" (fun m -> NL)
-//    |> rxReplace @"^[\r\n]*" (fun m -> NL)
     |> (fun t -> t.Trim() + NLNL)
 
 
 let topAndTail ex =
-    let double = String ('=', lineLength)
-    let single = String ('-', lineLength)
+    let comment text = Regex.Replace(text, "^", commentPrefix, RegexOptions.Multiline)    
 
     let linkLines = 
         ex.Links
         |> List.map (fun link ->
-            ("[" + link.Text + "]: ").PadRight(17) + bookUrl link.Path + NL)
-
+            ("[" + link.Text + "]: ").PadRight(17) + bookUrl link.Path + NL)       
+    
     let tat =         
         List.concat [
             [
                 //double; NL; NL;
-                ex.Text;
-                single; NL;
+                ex.ExMinimum;
+                singleLine; NL;
             ];
             linkLines
             [ex.TextId; " "; ex.TextTitle; " - p"; pageNumber ex.Id; NL];
-            [single];
+            [singleLine];
         ]
         |> String.Concat
-    {ex with Text = tat}
+
+    {ex with ExStandard = comment tat}
 
 let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) = 
     let addFile ref = (strId file.Id) + ref
@@ -317,7 +319,8 @@ let exerciseFromSource (file : SicpFile) (exSrc : ExerciseSrc) =
         Html = html    
         TextTitle = strTitle exSrc.TextTitle  
         TextId = strId exSrc.TextId
-        Text = getText text
+        ExMinimum = getText text
+        ExStandard = "<tat placeholder>"
         Links =  links |> Seq.toList 
         }
     topAndTail exercise
@@ -344,26 +347,3 @@ let exercisesFromFile file =
 let allExercises files = files |> Seq.collect exercisesFromFile
 
 
-//let jFormat ex =
-//   let commented = Regex.Replace(present ex, "^",  ";   ", RegexOptions.Multiline)    
-//   let uncommented =  
-//        [
-//            NL; NL;
-//            sprintf """(-start- "%s")""" ex.Id;
-//            NL; NL; NL; NL;
-//            sprintf """(--end-- "%s")""" ex.Id;
-//        ]        
-//        |> String.Concat
-//   "#lang racket" + NL + NL + commented + uncommented
-
-let write (ex : Exercise) =    
-    let dir = exerciseRoot
-    let exNo = Regex.Replace(ex.Id, "\.\d$", (fun m -> ".0" + m.Value))
-    let filename = exNo + ".rkt"
-    let path = Path.Combine(dir, filename)
-    //let content = format ex
-    File.WriteAllText(path, ex.Text)//, Encoding.UTF8)
-    //content
-
-let desc ex =
-    printfn "%s" ex
