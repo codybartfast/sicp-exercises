@@ -29,7 +29,7 @@ let main argv =
     
     let xx = 
         strings 
-        |> List.skip (46 + 97 + 82 + 79)
+        |> List.skip 0//(46 + 97 + 82 + 79 + 46)
         
     xx |> Seq.iter (fun x ->
         Console.Clear ()

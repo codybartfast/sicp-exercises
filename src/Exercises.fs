@@ -232,7 +232,7 @@ let getText html =
     |> rxReplace """</blockquote>""" (fun m -> """</blockquote>""" + NLNL)
 
 
-    |> rxReplace       """(?<=\n)(([A-Za-w"*]|\(Q)(\. +)?([^\r\n](?!(</td>|\s;|;;))){8,})(([^\r\n](?!(</td>|\s;|;;)))+\r?\n)+""" (formatPara lineLength)
+    |> rxReplace       """(?<=\n)(?!(compiled|primitive)-|after-|read-eval)(([A-Za-w"*]|\(Q)(\. +)?([^\r\n](?!(</td>|\s;))){8,})(([^\r\n](?!(</td>|\s;)))+\r?\n)+""" (formatPara lineLength)
 
     |> rxReplace """<blockquote>(?<quoted>.*?)</blockquote>""" (fun m -> 
         m.Groups.["quoted"].Value
