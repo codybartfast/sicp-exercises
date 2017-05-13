@@ -28,6 +28,7 @@ let exerciseImages = getDirectory exerciseRoot "images"
 let exMinimum = getDirectory exerciseRoot "minimum"
 let exStandard = getDirectory exerciseRoot "standard"
 let exStyleB = getDirectory exerciseRoot "styleB"
-let exStyleJ = getDirectory exerciseRoot "styleJ"
+let exStyleJRkt = getDirectory exerciseRoot "styleJ-Rkt"
+let exStyleJSicp = getDirectory exerciseRoot "styleJ-sicp"
 let exStyleJSect = getDirectory exerciseRoot "styleJSect"
 

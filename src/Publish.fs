@@ -24,7 +24,7 @@ let wrapFileB exId text =
     ] |> concat
 
 
-let wrapFileJ title text =
+let wrapFileJRkt title text =
     let title =
         match title with
         | None -> ""
@@ -33,6 +33,19 @@ let wrapFileJ title text =
         """#lang racket""";
         title;
         """(require "common.rkt")""";
+        "";
+        text;
+    ] |> concat
+
+let wrapFileJSicp title text =
+    let title =
+        match title with
+        | None -> ""
+        | Some title -> concat [""; title; "";] 
+    [
+        """#lang sicp""";
+        title;
+        """(#%require "common.sicp")""";
         "";
         text;
     ] |> concat
@@ -74,8 +87,15 @@ let publish exercises =
         let filename = sprintf "exercise-%s.rkt" (padExId ex.Id)
         let title = None //Some ("; Exercise " + ex.Id)
         let content = wrapExerciseJ ex.Id ex.ExStandard
-        let text = wrapFileJ title content
-        write exStyleJ filename text)
+        let text = wrapFileJRkt title content
+        write exStyleJRkt filename text)
+
+    exercises |> List.iter (fun ex ->  
+        let filename = sprintf "exercise-%s.sicp" (padExId ex.Id)
+        let title = None //Some ("; Exercise " + ex.Id)
+        let content = wrapExerciseJ ex.Id ex.ExStandard
+        let text = wrapFileJSicp title content
+        write exStyleJSicp filename text)
 
     exercises
         |> List.groupBy (fun ex -> ex.TextId)
@@ -93,5 +113,5 @@ let publish exercises =
                 sectExercises
                 |> List.map (fun ex -> wrapExerciseJ ex.Id ex.ExStandard)
                 |> String.concat (commentPrefix + doubleLine + NL + commentPrefix + NL)
-            let text = wrapFileJ title content
+            let text = wrapFileJRkt title content
             write exStyleJSect filename text )
