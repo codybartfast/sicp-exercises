@@ -45,7 +45,7 @@ let wrapFileJSicp title text =
     [
         """#lang sicp""";
         title;
-        """(#%require "common.sicp")""";
+        """(#%require "common.scm")""";
         "";
         text;
     ] |> concat
@@ -91,7 +91,7 @@ let publish exercises =
         write exStyleJRkt filename text)
 
     exercises |> List.iter (fun ex ->  
-        let filename = sprintf "exercise-%s.sicp" (padExId ex.Id)
+        let filename = sprintf "exercise-%s.scm" (padExId ex.Id)
         let title = None //Some ("; Exercise " + ex.Id)
         let content = wrapExerciseJ ex.Id ex.ExStandard
         let text = wrapFileJSicp title content

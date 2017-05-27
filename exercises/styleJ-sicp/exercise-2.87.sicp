@@ -1,6 +1,6 @@
 #lang sicp
 
-(#%require "common.sicp")
+(#%require "common.scm")
 
 ;   Exercise 2.87
 ;   =============
