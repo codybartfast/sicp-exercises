@@ -37,8 +37,8 @@
 ;   
 ;   b. The function x → e^x is its own derivative.  This implies that e^x
 ;   and the integral of e^x are the same series, except for the constant
-;   term, which is e<sup>0</sup> = 1. Accordingly, we can generate the
-;   series for e^x as
+;   term, which is e⁰ = 1. Accordingly, we can generate the series for e^x
+;   as
 ;   
 ;   (define exp-series
 ;     (cons-stream 1 (integrate-series exp-series)))

@@ -165,6 +165,7 @@ let handleSymbols text =
     |> rxReplace "(&quot;)" (fun m -> "\"")
     |> rxReplace "(&quot;)" (fun m -> "\"")
     |> rxReplace "(&middot;)" (fun m -> "·")
+    |> rxReplace "<sup>0</sup>" (fun m -> "⁰")
     |> rxReplace "<sup>2</sup>" (fun m -> "²")
     |> rxReplace "<sup>3</sup>" (fun m -> "³")
     |> rxReplace "<sup>5</sup>" (fun m -> "⁵")
