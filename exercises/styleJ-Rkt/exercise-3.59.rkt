@@ -17,9 +17,9 @@
 ;   cos x = 1 - ── + ───── - ···,
 ;               2    4·3·2
 ;   
-;               r²      r⁴
-;   cos x = 1 - ──  + ───── - ···,
-;               2     4·3·2
+;                r³       r⁵
+;   sin x = r - ───  + ─────── - ···,
+;               3.2    5.4·3·2
 ;   
 ;   represented as infinite streams. We will represent the series a₀ + a₁ x
 ;   + a₂ x² + a₃ x³ + ··· as the stream whose elements are the coefficients
